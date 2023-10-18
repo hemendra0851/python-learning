@@ -6,7 +6,7 @@ my_list = [x*2 for x in nums]
 my_list = [x for x in nums if x%2==0]
 my_list = [x if x%2==0 else 'ODD' for x in nums]
 
-fileList = [file.name for file in files if 'DU' in file.name or 'HU' in file.name and '(' not in file.name]
+# fileList = [file.name for file in files if 'DU' in file.name or 'HU' in file.name and '(' not in file.name]
 
 # Nested For Loop
 mylist = []

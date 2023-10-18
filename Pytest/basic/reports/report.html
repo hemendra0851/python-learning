@@ -2,382 +2,769 @@
 <html>
   <head>
     <meta charset="utf-8"/>
-    <title>report.html</title>
-    <link href="assets/style.css" rel="stylesheet" type="text/css"/></head>
-  <body onLoad="init()">
-    <script>/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
-
-
-function toArray(iter) {
-    if (iter === null) {
-        return null;
-    }
-    return Array.prototype.slice.call(iter);
-}
-
-function find(selector, elem) { // eslint-disable-line no-redeclare
-    if (!elem) {
-        elem = document;
-    }
-    return elem.querySelector(selector);
-}
-
-function findAll(selector, elem) {
-    if (!elem) {
-        elem = document;
-    }
-    return toArray(elem.querySelectorAll(selector));
-}
-
-function sortColumn(elem) {
-    toggleSortStates(elem);
-    const colIndex = toArray(elem.parentNode.childNodes).indexOf(elem);
-    let key;
-    if (elem.classList.contains('result')) {
-        key = keyResult;
-    } else if (elem.classList.contains('links')) {
-        key = keyLink;
-    } else {
-        key = keyAlpha;
-    }
-    sortTable(elem, key(colIndex));
-}
-
-function showAllExtras() { // eslint-disable-line no-unused-vars
-    findAll('.col-result').forEach(showExtras);
-}
-
-function hideAllExtras() { // eslint-disable-line no-unused-vars
-    findAll('.col-result').forEach(hideExtras);
-}
-
-function showExtras(colresultElem) {
-    const extras = colresultElem.parentNode.nextElementSibling;
-    const expandcollapse = colresultElem.firstElementChild;
-    extras.classList.remove('collapsed');
-    expandcollapse.classList.remove('expander');
-    expandcollapse.classList.add('collapser');
-}
-
-function hideExtras(colresultElem) {
-    const extras = colresultElem.parentNode.nextElementSibling;
-    const expandcollapse = colresultElem.firstElementChild;
-    extras.classList.add('collapsed');
-    expandcollapse.classList.remove('collapser');
-    expandcollapse.classList.add('expander');
-}
-
-function showFilters() {
-    let visibleString = getQueryParameter('visible') || 'all';
-    visibleString = visibleString.toLowerCase();
-    const checkedItems = visibleString.split(',');
-
-    const filterItems = document.getElementsByClassName('filter');
-    for (let i = 0; i < filterItems.length; i++) {
-        filterItems[i].hidden = false;
-
-        if (visibleString != 'all') {
-            filterItems[i].checked = checkedItems.includes(filterItems[i].getAttribute('data-test-result'));
-            filterTable(filterItems[i]);
-        }
-    }
-}
-
-function addCollapse() {
-    // Add links for show/hide all
-    const resulttable = find('table#results-table');
-    const showhideall = document.createElement('p');
-    showhideall.innerHTML = '<a href="javascript:showAllExtras()">Show all details</a> / ' +
-                            '<a href="javascript:hideAllExtras()">Hide all details</a>';
-    resulttable.parentElement.insertBefore(showhideall, resulttable);
-
-    // Add show/hide link to each result
-    findAll('.col-result').forEach(function(elem) {
-        const collapsed = getQueryParameter('collapsed') || 'Passed';
-        const extras = elem.parentNode.nextElementSibling;
-        const expandcollapse = document.createElement('span');
-        if (extras.classList.contains('collapsed')) {
-            expandcollapse.classList.add('expander');
-        } else if (collapsed.includes(elem.innerHTML)) {
-            extras.classList.add('collapsed');
-            expandcollapse.classList.add('expander');
-        } else {
-            expandcollapse.classList.add('collapser');
-        }
-        elem.appendChild(expandcollapse);
-
-        elem.addEventListener('click', function(event) {
-            if (event.currentTarget.parentNode.nextElementSibling.classList.contains('collapsed')) {
-                showExtras(event.currentTarget);
-            } else {
-                hideExtras(event.currentTarget);
-            }
-        });
-    });
-}
-
-function getQueryParameter(name) {
-    const match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
-    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
-}
-
-function init () { // eslint-disable-line no-unused-vars
-    resetSortHeaders();
-
-    addCollapse();
-
-    showFilters();
-
-    sortColumn(find('.initial-sort'));
-
-    findAll('.sortable').forEach(function(elem) {
-        elem.addEventListener('click',
-            function() {
-                sortColumn(elem);
-            }, false);
-    });
-}
-
-function sortTable(clicked, keyFunc) {
-    const rows = findAll('.results-table-row');
-    const reversed = !clicked.classList.contains('asc');
-    const sortedRows = sort(rows, keyFunc, reversed);
-    /* Whole table is removed here because browsers acts much slower
-     * when appending existing elements.
-     */
-    const thead = document.getElementById('results-table-head');
-    document.getElementById('results-table').remove();
-    const parent = document.createElement('table');
-    parent.id = 'results-table';
-    parent.appendChild(thead);
-    sortedRows.forEach(function(elem) {
-        parent.appendChild(elem);
-    });
-    document.getElementsByTagName('BODY')[0].appendChild(parent);
-}
-
-function sort(items, keyFunc, reversed) {
-    const sortArray = items.map(function(item, i) {
-        return [keyFunc(item), i];
-    });
-
-    sortArray.sort(function(a, b) {
-        const keyA = a[0];
-        const keyB = b[0];
-
-        if (keyA == keyB) return 0;
-
-        if (reversed) {
-            return keyA < keyB ? 1 : -1;
-        } else {
-            return keyA > keyB ? 1 : -1;
-        }
-    });
-
-    return sortArray.map(function(item) {
-        const index = item[1];
-        return items[index];
-    });
-}
-
-function keyAlpha(colIndex) {
-    return function(elem) {
-        return elem.childNodes[1].childNodes[colIndex].firstChild.data.toLowerCase();
-    };
-}
-
-function keyLink(colIndex) {
-    return function(elem) {
-        const dataCell = elem.childNodes[1].childNodes[colIndex].firstChild;
-        return dataCell == null ? '' : dataCell.innerText.toLowerCase();
-    };
-}
-
-function keyResult(colIndex) {
-    return function(elem) {
-        const strings = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed',
-            'Skipped', 'Passed'];
-        return strings.indexOf(elem.childNodes[1].childNodes[colIndex].firstChild.data);
-    };
-}
-
-function resetSortHeaders() {
-    findAll('.sort-icon').forEach(function(elem) {
-        elem.parentNode.removeChild(elem);
-    });
-    findAll('.sortable').forEach(function(elem) {
-        const icon = document.createElement('div');
-        icon.className = 'sort-icon';
-        icon.textContent = 'vvv';
-        elem.insertBefore(icon, elem.firstChild);
-        elem.classList.remove('desc', 'active');
-        elem.classList.add('asc', 'inactive');
-    });
-}
-
-function toggleSortStates(elem) {
-    //if active, toggle between asc and desc
-    if (elem.classList.contains('active')) {
-        elem.classList.toggle('asc');
-        elem.classList.toggle('desc');
-    }
-
-    //if inactive, reset all other functions and add ascending active
-    if (elem.classList.contains('inactive')) {
-        resetSortHeaders();
-        elem.classList.remove('inactive');
-        elem.classList.add('active');
-    }
-}
-
-function isAllRowsHidden(value) {
-    return value.hidden == false;
-}
-
-function filterTable(elem) { // eslint-disable-line no-unused-vars
-    const outcomeAtt = 'data-test-result';
-    const outcome = elem.getAttribute(outcomeAtt);
-    const classOutcome = outcome + ' results-table-row';
-    const outcomeRows = document.getElementsByClassName(classOutcome);
-
-    for(let i = 0; i < outcomeRows.length; i++){
-        outcomeRows[i].hidden = !elem.checked;
-    }
-
-    const rows = findAll('.results-table-row').filter(isAllRowsHidden);
-    const allRowsHidden = rows.length == 0 ? true : false;
-    const notFoundMessage = document.getElementById('not-found-message');
-    notFoundMessage.hidden = !allRowsHidden;
-}
-</script>
-    <h1>report.html</h1>
-    <p>Report generated on 06-Dec-2022 at 20:47:03 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a> v3.2.0</p>
-    <h2>Environment</h2>
-    <table id="environment">
+    <title id="head-title">report.html</title>
+      <link href="assets\style.css" rel="stylesheet" type="text/css"/>
+  </head>
+  <body>
+    <h1 id="title">report.html</h1>
+    <p>Report generated on 16-Sep-2023 at 11:15:01 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a>
+        v4.0.2</p>
+    <div id="environment-header">
+      <h2>Environment</h2>
+    </div>
+    <table id="environment"></table>
+    <!-- TEMPLATES -->
+      <template id="template_environment_row">
       <tr>
-        <td>JAVA_HOME</td>
-        <td>C:\Program Files\Java\jdk1.8.0_311</td></tr>
-      <tr>
-        <td>Packages</td>
-        <td>{"pluggy": "0.13.1", "pytest": "6.2.5"}</td></tr>
-      <tr>
-        <td>Platform</td>
-        <td>Windows-10-10.0.19042-SP0</td></tr>
-      <tr>
-        <td>Plugins</td>
-        <td>{"Faker": "15.0.0", "html": "3.2.0", "metadata": "2.0.4"}</td></tr>
-      <tr>
-        <td>Python</td>
-        <td>3.9.7</td></tr></table>
-    <h2>Summary</h2>
-    <p>9 tests ran in 14.42 seconds. </p>
-    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="passed">5 passed</span>, <input checked="true" class="filter" data-test-result="skipped" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="skipped">0 skipped</span>, <input checked="true" class="filter" data-test-result="failed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="failed">4 failed</span>, <input checked="true" class="filter" data-test-result="error" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="error">0 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>
-    <h2>Results</h2>
+        <td></td>
+        <td></td>
+      </tr>
+    </template>
+    <template id="template_results-table__body--empty">
+      <tbody class="results-table-row">
+        <tr id="not-found-message">
+          <td colspan="4">No results found. Check the filters.</th>
+        </tr>
+    </template>
+    <template id="template_results-table__tbody">
+      <tbody class="results-table-row">
+        <tr class="collapsible">
+        </tr>
+        <tr class="extras-row">
+          <td class="extra" colspan="4">
+            <div class="extraHTML"></div>
+            <div class="media">
+              <div class="media-container">
+                  <div class="media-container__nav--left"><</div>
+                  <div class="media-container__viewport">
+                    <img src="" />
+                    <video controls>
+                      <source src="" type="video/mp4">
+                    </video>
+                  </div>
+                  <div class="media-container__nav--right">></div>
+                </div>
+                <div class="media__name"></div>
+                <div class="media__counter"></div>
+            </div>
+            <div class="logwrapper">
+              <div class="logexpander"></div>
+              <div class="log"></div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </template>
+    <!-- END TEMPLATES -->
+    <div class="summary">
+      <div class="summary__data">
+        <h2>Summary</h2>
+        <div class="additional-summary prefix">
+        </div>
+        <p class="run-count">0 test took 00:00:19.</p>
+        <p class="filter">(Un)check the boxes to filter the results.</p>
+        <div class="summary__reload">
+          <div class="summary__reload__button hidden" onclick="location.reload()">
+            <div>There are still tests running. <br />Reload this page to ge the latest results!</div>
+          </div>
+        </div>
+        <div class="summary__spacer"></div>
+        <div class="controls">
+          <div class="filters">
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="failed" disabled/>
+            <span class="failed">0 Failed,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="passed" disabled/>
+            <span class="passed">0 Passed,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="skipped" />
+            <span class="skipped">1 Skipped,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="xfailed" disabled/>
+            <span class="xfailed">0 Expected failures,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="xpassed" disabled/>
+            <span class="xpassed">0 Unexpected passes,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="error" />
+            <span class="error">8 Errors,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="rerun" disabled/>
+            <span class="rerun">0 Reruns</span>
+          </div>
+          <div class="collapse">
+            <button id="show_all_details">Show all details</button>&nbsp;/&nbsp;<button id="hide_all_details">Hide all details</button>
+          </div>
+        </div>
+      </div>
+      <div class="additional-summary summary">
+      </div>
+      <div class="additional-summary postfix">
+      </div>
+    </div>
     <table id="results-table">
       <thead id="results-table-head">
         <tr>
-          <th class="sortable result initial-sort" col="result">Result</th>
-          <th class="sortable" col="name">Test</th>
-          <th class="sortable" col="duration">Duration</th>
-          <th class="sortable links" col="links">Links</th></tr>
-        <tr hidden="true" id="not-found-message">
-          <th colspan="4">No results found. Try to check the filters</th></tr></thead>
-      <tbody class="failed results-table-row">
-        <tr>
-          <td class="col-result">Failed</td>
-          <td class="col-name">tests/test_parametrized.py::TestSum::test_equal[1-1-2-Does Not Match]</td>
-          <td class="col-duration">0.00</td>
-          <td class="col-links"></td></tr>
-        <tr>
-          <td class="extra" colspan="4">
-            <div class="log">self = &lt;test_parametrized.TestSum object at 0x00000218C5A883A0&gt;, show = &#x27;number=1&#x27;, num1 = 1, num2 = 2, error_message = &#x27;Does Not Match&#x27;<br/><br/>    @pytest.mark.all<br/>    @pytest.mark.parametrize(argnames=&#x27;num1, num2, error_message&#x27;, argvalues=[(1, 1, &#x27;Matches&#x27;), (1, 2, &#x27;Does Not Match&#x27;)])<br/>    def test_equal(self, show, num1, num2, error_message):<br/>        # Pass the parameters as the function arguments<br/>&gt;       assert self.check_equal(num1, num2), error_message<br/><span class="error">E       AssertionError: Does Not Match</span><br/><span class="error">E       assert False</span><br/><span class="error">E        +  where False = &lt;bound method TestSum.check_equal of &lt;test_parametrized.TestSum object at 0x00000218C5A883A0&gt;&gt;(1, 2)</span><br/><span class="error">E        +    where &lt;bound method TestSum.check_equal of &lt;test_parametrized.TestSum object at 0x00000218C5A883A0&gt;&gt; = &lt;test_parametrized.TestSum object at 0x00000218C5A883A0&gt;.check_equal</span><br/><br/>tests\test_parametrized.py:14: AssertionError<br/> -----------------------------Captured stdout setup------------------------------ <br/>start fixture for num 1
-<br/> ------------------------------Captured stdout call------------------------------ <br/>Checking equality....
-<br/> ----------------------------Captured stdout teardown---------------------------- <br/>end fixture
-<br/></div></td></tr></tbody>
-      <tbody class="failed results-table-row">
-        <tr>
-          <td class="col-result">Failed</td>
-          <td class="col-name">tests/test_parametrized.py::TestSum::test_equal[2-1-2-Does Not Match]</td>
-          <td class="col-duration">0.01</td>
-          <td class="col-links"></td></tr>
-        <tr>
-          <td class="extra" colspan="4">
-            <div class="log">self = &lt;test_parametrized.TestSum object at 0x00000218C5A941F0&gt;, show = &#x27;number=1&#x27;, num1 = 1, num2 = 2, error_message = &#x27;Does Not Match&#x27;<br/><br/>    @pytest.mark.all<br/>    @pytest.mark.parametrize(argnames=&#x27;num1, num2, error_message&#x27;, argvalues=[(1, 1, &#x27;Matches&#x27;), (1, 2, &#x27;Does Not Match&#x27;)])<br/>    def test_equal(self, show, num1, num2, error_message):<br/>        # Pass the parameters as the function arguments<br/>&gt;       assert self.check_equal(num1, num2), error_message<br/><span class="error">E       AssertionError: Does Not Match</span><br/><span class="error">E       assert False</span><br/><span class="error">E        +  where False = &lt;bound method TestSum.check_equal of &lt;test_parametrized.TestSum object at 0x00000218C5A941F0&gt;&gt;(1, 2)</span><br/><span class="error">E        +    where &lt;bound method TestSum.check_equal of &lt;test_parametrized.TestSum object at 0x00000218C5A941F0&gt;&gt; = &lt;test_parametrized.TestSum object at 0x00000218C5A941F0&gt;.check_equal</span><br/><br/>tests\test_parametrized.py:14: AssertionError<br/> -----------------------------Captured stdout setup------------------------------ <br/>start fixture for num 2
-<br/> ------------------------------Captured stdout call------------------------------ <br/>Checking equality....
-<br/> ----------------------------Captured stdout teardown---------------------------- <br/>end fixture
-<br/></div></td></tr></tbody>
-      <tbody class="failed results-table-row">
-        <tr>
-          <td class="col-result">Failed</td>
-          <td class="col-name">tests/test_prod.py::TestProd::test_incorrect_prod</td>
-          <td class="col-duration">0.00</td>
-          <td class="col-links"></td></tr>
-        <tr>
-          <td class="extra" colspan="4">
-            <div class="log">self = &lt;test_prod.TestProd object at 0x00000218C5A948B0&gt;<br/><br/>    @pytest.mark.prod<br/>    @pytest.mark.negative<br/>    def test_incorrect_prod(self):<br/>        prod = Basic.multiply_numbers(3, 2)<br/>&gt;       assert prod == 5, &#x27;Incorrect Value&#x27;<br/><span class="error">E       AssertionError: Incorrect Value</span><br/><span class="error">E       assert 6 == 5</span><br/><span class="error">E         +6</span><br/><span class="error">E         -5</span><br/><br/>tests\test_prod.py:16: AssertionError<br/></div></td></tr></tbody>
-      <tbody class="failed results-table-row">
-        <tr>
-          <td class="col-result">Failed</td>
-          <td class="col-name">tests/test_sum.py::TestSum::test_incorrect_sum</td>
-          <td class="col-duration">0.00</td>
-          <td class="col-links"></td></tr>
-        <tr>
-          <td class="extra" colspan="4">
-            <div class="log">self = &lt;test_sum.TestSum object at 0x00000218C5B8A5B0&gt;<br/><br/>    @pytest.mark.sum<br/>    @pytest.mark.negative<br/>    def test_incorrect_sum(self):<br/>        sum = Basic.add_numbers(3, 2)<br/>&gt;       assert sum == 6, &#x27;Incorrect Value&#x27;<br/><span class="error">E       AssertionError: Incorrect Value</span><br/><span class="error">E       assert 5 == 6</span><br/><span class="error">E         +5</span><br/><span class="error">E         -6</span><br/><br/>tests\test_sum.py:18: AssertionError<br/></div></td></tr></tbody>
-      <tbody class="passed results-table-row">
-        <tr>
-          <td class="col-result">Passed</td>
-          <td class="col-name">tests/test_parametrized.py::TestSum::test_equal[1-1-1-Matches]</td>
-          <td class="col-duration">7.02</td>
-          <td class="col-links"></td></tr>
-        <tr>
-          <td class="extra" colspan="4">
-            <div class="log"> -----------------------------Captured stdout setup------------------------------ <br/>start fixture for num 1
-<br/> ------------------------------Captured stdout call------------------------------ <br/>Checking equality....
-<br/> ----------------------------Captured stdout teardown---------------------------- <br/>end fixture
-<br/></div></td></tr></tbody>
-      <tbody class="passed results-table-row">
-        <tr>
-          <td class="col-result">Passed</td>
-          <td class="col-name">tests/test_parametrized.py::TestSum::test_equal[2-1-1-Matches]</td>
-          <td class="col-duration">0.01</td>
-          <td class="col-links"></td></tr>
-        <tr>
-          <td class="extra" colspan="4">
-            <div class="log"> -----------------------------Captured stdout setup------------------------------ <br/>start fixture for num 2
-<br/> ------------------------------Captured stdout call------------------------------ <br/>Checking equality....
-<br/> ----------------------------Captured stdout teardown---------------------------- <br/>end fixture
-<br/></div></td></tr></tbody>
-      <tbody class="passed results-table-row">
-        <tr>
-          <td class="col-result">Passed</td>
-          <td class="col-name">tests/test_prod.py::TestProd::test_correct_prod</td>
-          <td class="col-duration">0.00</td>
-          <td class="col-links"></td></tr>
-        <tr>
-          <td class="extra" colspan="4">
-            <div class="empty log">No log output captured.</div></td></tr></tbody>
-      <tbody class="passed results-table-row">
-        <tr>
-          <td class="col-result">Passed</td>
-          <td class="col-name">tests/test_sum.py::TestSum::test_correct_sum[1]</td>
-          <td class="col-duration">0.01</td>
-          <td class="col-links"></td></tr>
-        <tr>
-          <td class="extra" colspan="4">
-            <div class="log"> -----------------------------Captured stdout setup------------------------------ <br/>start fixture for num 1
-<br/> ----------------------------Captured stdout teardown---------------------------- <br/>end fixture
-<br/></div></td></tr></tbody>
-      <tbody class="passed results-table-row">
-        <tr>
-          <td class="col-result">Passed</td>
-          <td class="col-name">tests/test_sum.py::TestSum::test_correct_sum[2]</td>
-          <td class="col-duration">0.01</td>
-          <td class="col-links"></td></tr>
-        <tr>
-          <td class="extra" colspan="4">
-            <div class="log"> -----------------------------Captured stdout setup------------------------------ <br/>start fixture for num 2
-<br/> ----------------------------Captured stdout teardown---------------------------- <br/>end fixture
-<br/></div></td></tr></tbody></table></body></html>
+          <th class="sortable" data-column-type="result">Result</th>
+          <th class="sortable" data-column-type="testId">Test</th>
+          <th class="sortable" data-column-type="duration">Duration</th>
+          <th>Links</th>
+        </tr>
+      </thead>
+    </table>
+  </body>
+  <footer>
+    <div id="data-container" data-jsonblob="{&#34;environment&#34;: {&#34;Python&#34;: &#34;3.11.4&#34;, &#34;Platform&#34;: &#34;Windows-10-10.0.22621-SP0&#34;, &#34;Packages&#34;: {&#34;pytest&#34;: &#34;7.4.2&#34;, &#34;pluggy&#34;: &#34;1.3.0&#34;}, &#34;Plugins&#34;: {&#34;html&#34;: &#34;4.0.2&#34;, &#34;metadata&#34;: &#34;3.0.0&#34;}}, &#34;tests&#34;: {&#34;tests/Fixture/class/test_amazon_cls.py::AmznTest::test_check_amazon_cls&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Error&#34;, &#34;testId&#34;: &#34;tests/Fixture/class/test_amazon_cls.py::AmznTest::test_check_amazon_cls::setup&#34;, &#34;duration&#34;: &#34;00:00:03&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Error&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;tests/Fixture/class/test_amazon_cls.py::AmznTest::test_check_amazon_cls::setup&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:03&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;request = &amp;lt;SubRequest &#39;cls_browser&#39; for &amp;lt;Function test_check_amazon_cls&amp;gt;&amp;gt;\n\n    @pytest.fixture(scope=&#39;class&#39;)\n    def cls_browser(request):\n&amp;gt;       driver = webdriver.Chrome(options=options)\n\nconftest.py:24: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\chrome\\webdriver.py:80: in __init__\n    super().__init__(\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\chromium\\webdriver.py:104: in __init__\n    super().__init__(\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:286: in __init__\n    self.start_session(capabilities, browser_profile)\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:378: in start_session\n    response = self.execute(Command.NEW_SESSION, parameters)\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:440: in execute\n    self.error_handler.check_response(response)\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\nself = &amp;lt;selenium.webdriver.remote.errorhandler.ErrorHandler object at 0x0000029FAD439950&amp;gt;\nresponse = {&#39;status&#39;: 500, &#39;value&#39;: &#39;{\&#34;value\&#34;:{\&#34;error\&#34;:\&#34;session not created\&#34;,\&#34;message\&#34;:\&#34;session not created: This version of Chro...\\tRtlInitializeExceptionChain [0x77B7B79B+107]\\\\n\\\\tRtlClearBits [0x77B7B71F+191]\\\\n\\\\t(No symbol) [0x00000000]\\\\n\&#34;}}&#39;}\n\n    def check_response(self, response: Dict[str, Any]) -&amp;gt; None:\n        \&#34;\&#34;\&#34;Checks that a JSON response from the WebDriver does not have an\n        error.\n    \n        :Args:\n         - response - The JSON response from the WebDriver server as a dictionary\n           object.\n    \n        :Raises: If the response contains an error message.\n        \&#34;\&#34;\&#34;\n        status = response.get(\&#34;status\&#34;, None)\n        if not status or status == ErrorCode.SUCCESS:\n            return\n        value = None\n        message = response.get(\&#34;message\&#34;, \&#34;\&#34;)\n        screen: str = response.get(\&#34;screen\&#34;, \&#34;\&#34;)\n        stacktrace = None\n        if isinstance(status, int):\n            value_json = response.get(\&#34;value\&#34;, None)\n            if value_json and isinstance(value_json, str):\n                import json\n    \n                try:\n                    value = json.loads(value_json)\n                    if len(value.keys()) == 1:\n                        value = value[\&#34;value\&#34;]\n                    status = value.get(\&#34;error\&#34;, None)\n                    if not status:\n                        status = value.get(\&#34;status\&#34;, ErrorCode.UNKNOWN_ERROR)\n                        message = value.get(\&#34;value\&#34;) or value.get(\&#34;message\&#34;)\n                        if not isinstance(message, str):\n                            value = message\n                            message = message.get(\&#34;message\&#34;)\n                    else:\n                        message = value.get(\&#34;message\&#34;, None)\n                except ValueError:\n                    pass\n    \n        exception_class: Type[WebDriverException]\n        if status in ErrorCode.NO_SUCH_ELEMENT:\n            exception_class = NoSuchElementException\n        elif status in ErrorCode.NO_SUCH_FRAME:\n            exception_class = NoSuchFrameException\n        elif status in ErrorCode.NO_SUCH_SHADOW_ROOT:\n            exception_class = NoSuchShadowRootException\n        elif status in ErrorCode.NO_SUCH_WINDOW:\n            exception_class = NoSuchWindowException\n        elif status in ErrorCode.STALE_ELEMENT_REFERENCE:\n            exception_class = StaleElementReferenceException\n        elif status in ErrorCode.ELEMENT_NOT_VISIBLE:\n            exception_class = ElementNotVisibleException\n        elif status in ErrorCode.INVALID_ELEMENT_STATE:\n            exception_class = InvalidElementStateException\n        elif (\n            status in ErrorCode.INVALID_SELECTOR\n            or status in ErrorCode.INVALID_XPATH_SELECTOR\n            or status in ErrorCode.INVALID_XPATH_SELECTOR_RETURN_TYPER\n        ):\n            exception_class = InvalidSelectorException\n        elif status in ErrorCode.ELEMENT_IS_NOT_SELECTABLE:\n            exception_class = ElementNotSelectableException\n        elif status in ErrorCode.ELEMENT_NOT_INTERACTABLE:\n            exception_class = ElementNotInteractableException\n        elif status in ErrorCode.INVALID_COOKIE_DOMAIN:\n            exception_class = InvalidCookieDomainException\n        elif status in ErrorCode.UNABLE_TO_SET_COOKIE:\n            exception_class = UnableToSetCookieException\n        elif status in ErrorCode.TIMEOUT:\n            exception_class = TimeoutException\n        elif status in ErrorCode.SCRIPT_TIMEOUT:\n            exception_class = TimeoutException\n        elif status in ErrorCode.UNKNOWN_ERROR:\n            exception_class = WebDriverException\n        elif status in ErrorCode.UNEXPECTED_ALERT_OPEN:\n            exception_class = UnexpectedAlertPresentException\n        elif status in ErrorCode.NO_ALERT_OPEN:\n            exception_class = NoAlertPresentException\n        elif status in ErrorCode.IME_NOT_AVAILABLE:\n            exception_class = ImeNotAvailableException\n        elif status in ErrorCode.IME_ENGINE_ACTIVATION_FAILED:\n            exception_class = ImeActivationFailedException\n        elif status in ErrorCode.MOVE_TARGET_OUT_OF_BOUNDS:\n            exception_class = MoveTargetOutOfBoundsException\n        elif status in ErrorCode.JAVASCRIPT_ERROR:\n            exception_class = JavascriptException\n        elif status in ErrorCode.SESSION_NOT_CREATED:\n            exception_class = SessionNotCreatedException\n        elif status in ErrorCode.INVALID_ARGUMENT:\n            exception_class = InvalidArgumentException\n        elif status in ErrorCode.NO_SUCH_COOKIE:\n            exception_class = NoSuchCookieException\n        elif status in ErrorCode.UNABLE_TO_CAPTURE_SCREEN:\n            exception_class = ScreenshotException\n        elif status in ErrorCode.ELEMENT_CLICK_INTERCEPTED:\n            exception_class = ElementClickInterceptedException\n        elif status in ErrorCode.INSECURE_CERTIFICATE:\n            exception_class = InsecureCertificateException\n        elif status in ErrorCode.INVALID_COORDINATES:\n            exception_class = InvalidCoordinatesException\n        elif status in ErrorCode.INVALID_SESSION_ID:\n            exception_class = InvalidSessionIdException\n        elif status in ErrorCode.UNKNOWN_METHOD:\n            exception_class = UnknownMethodException\n        else:\n            exception_class = WebDriverException\n        if not value:\n            value = response[\&#34;value\&#34;]\n        if isinstance(value, str):\n            raise exception_class(value)\n        if message == \&#34;\&#34; and \&#34;message\&#34; in value:\n            message = value[\&#34;message\&#34;]\n    \n        screen = None  # type: ignore[assignment]\n        if \&#34;screen\&#34; in value:\n            screen = value[\&#34;screen\&#34;]\n    \n        stacktrace = None\n        st_value = value.get(\&#34;stackTrace\&#34;) or value.get(\&#34;stacktrace\&#34;)\n        if st_value:\n            if isinstance(st_value, str):\n                stacktrace = st_value.split(\&#34;\\n\&#34;)\n            else:\n                stacktrace = []\n                try:\n                    for frame in st_value:\n                        line = frame.get(\&#34;lineNumber\&#34;, \&#34;\&#34;)\n                        file = frame.get(\&#34;fileName\&#34;, \&#34;&amp;lt;anonymous&amp;gt;\&#34;)\n                        if line:\n                            file = f\&#34;{file}:{line}\&#34;\n                        meth = frame.get(\&#34;methodName\&#34;, \&#34;&amp;lt;anonymous&amp;gt;\&#34;)\n                        if \&#34;className\&#34; in frame:\n                            meth = f\&#34;{frame[&#39;className&#39;]}.{meth}\&#34;\n                        msg = \&#34;    at %s (%s)\&#34;\n                        msg = msg % (meth, file)\n                        stacktrace.append(msg)\n                except TypeError:\n                    pass\n        if exception_class == UnexpectedAlertPresentException:\n            alert_text = None\n            if \&#34;data\&#34; in value:\n                alert_text = value[\&#34;data\&#34;].get(\&#34;text\&#34;)\n            elif \&#34;alert\&#34; in value:\n                alert_text = value[\&#34;alert\&#34;].get(\&#34;text\&#34;)\n            raise exception_class(message, screen, stacktrace, alert_text)  # type: ignore[call-arg]  # mypy is not smart enough here\n&amp;gt;       raise exception_class(message, screen, stacktrace)\nE       selenium.common.exceptions.SessionNotCreatedException: Message: session not created: This version of ChromeDriver only supports Chrome version 114\nE       Current browser version is 117.0.5938.89 with binary path C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\nE       Stacktrace:\nE       Backtrace:\nE       \tGetHandleVerifier [0x0029A813+48355]\nE       \t(No symbol) [0x0022C4B1]\nE       \t(No symbol) [0x00135358]\nE       \t(No symbol) [0x001561AC]\nE       \t(No symbol) [0x00151EF3]\nE       \t(No symbol) [0x00150579]\nE       \t(No symbol) [0x00180C55]\nE       \t(No symbol) [0x0018093C]\nE       \t(No symbol) [0x0017A536]\nE       \t(No symbol) [0x001582DC]\nE       \t(No symbol) [0x001593DD]\nE       \tGetHandleVerifier [0x004FAABD+2539405]\nE       \tGetHandleVerifier [0x0053A78F+2800735]\nE       \tGetHandleVerifier [0x0053456C+2775612]\nE       \tGetHandleVerifier [0x003251E0+616112]\nE       \t(No symbol) [0x00235F8C]\nE       \t(No symbol) [0x00232328]\nE       \t(No symbol) [0x0023240B]\nE       \t(No symbol) [0x00224FF7]\nE       \tBaseThreadInitThunk [0x76857D59+25]\nE       \tRtlInitializeExceptionChain [0x77B7B79B+107]\nE       \tRtlClearBits [0x77B7B71F+191]\nE       \t(No symbol) [0x00000000]\n\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\errorhandler.py:245: SessionNotCreatedException\n&#34;}], &#34;tests/Fixture/class/test_google_cls.py::GoogleTest::test_check_google_1_cls&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Error&#34;, &#34;testId&#34;: &#34;tests/Fixture/class/test_google_cls.py::GoogleTest::test_check_google_1_cls::setup&#34;, &#34;duration&#34;: &#34;00:00:03&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Error&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;tests/Fixture/class/test_google_cls.py::GoogleTest::test_check_google_1_cls::setup&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:03&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;request = &amp;lt;SubRequest &#39;cls_browser&#39; for &amp;lt;Function test_check_google_1_cls&amp;gt;&amp;gt;\n\n    @pytest.fixture(scope=&#39;class&#39;)\n    def cls_browser(request):\n&amp;gt;       driver = webdriver.Chrome(options=options)\n\nconftest.py:24: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\chrome\\webdriver.py:80: in __init__\n    super().__init__(\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\chromium\\webdriver.py:104: in __init__\n    super().__init__(\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:286: in __init__\n    self.start_session(capabilities, browser_profile)\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:378: in start_session\n    response = self.execute(Command.NEW_SESSION, parameters)\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:440: in execute\n    self.error_handler.check_response(response)\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\nself = &amp;lt;selenium.webdriver.remote.errorhandler.ErrorHandler object at 0x0000029FB0FB9D10&amp;gt;\nresponse = {&#39;status&#39;: 500, &#39;value&#39;: &#39;{\&#34;value\&#34;:{\&#34;error\&#34;:\&#34;session not created\&#34;,\&#34;message\&#34;:\&#34;session not created: This version of Chro...\\tRtlInitializeExceptionChain [0x77B7B79B+107]\\\\n\\\\tRtlClearBits [0x77B7B71F+191]\\\\n\\\\t(No symbol) [0x00000000]\\\\n\&#34;}}&#39;}\n\n    def check_response(self, response: Dict[str, Any]) -&amp;gt; None:\n        \&#34;\&#34;\&#34;Checks that a JSON response from the WebDriver does not have an\n        error.\n    \n        :Args:\n         - response - The JSON response from the WebDriver server as a dictionary\n           object.\n    \n        :Raises: If the response contains an error message.\n        \&#34;\&#34;\&#34;\n        status = response.get(\&#34;status\&#34;, None)\n        if not status or status == ErrorCode.SUCCESS:\n            return\n        value = None\n        message = response.get(\&#34;message\&#34;, \&#34;\&#34;)\n        screen: str = response.get(\&#34;screen\&#34;, \&#34;\&#34;)\n        stacktrace = None\n        if isinstance(status, int):\n            value_json = response.get(\&#34;value\&#34;, None)\n            if value_json and isinstance(value_json, str):\n                import json\n    \n                try:\n                    value = json.loads(value_json)\n                    if len(value.keys()) == 1:\n                        value = value[\&#34;value\&#34;]\n                    status = value.get(\&#34;error\&#34;, None)\n                    if not status:\n                        status = value.get(\&#34;status\&#34;, ErrorCode.UNKNOWN_ERROR)\n                        message = value.get(\&#34;value\&#34;) or value.get(\&#34;message\&#34;)\n                        if not isinstance(message, str):\n                            value = message\n                            message = message.get(\&#34;message\&#34;)\n                    else:\n                        message = value.get(\&#34;message\&#34;, None)\n                except ValueError:\n                    pass\n    \n        exception_class: Type[WebDriverException]\n        if status in ErrorCode.NO_SUCH_ELEMENT:\n            exception_class = NoSuchElementException\n        elif status in ErrorCode.NO_SUCH_FRAME:\n            exception_class = NoSuchFrameException\n        elif status in ErrorCode.NO_SUCH_SHADOW_ROOT:\n            exception_class = NoSuchShadowRootException\n        elif status in ErrorCode.NO_SUCH_WINDOW:\n            exception_class = NoSuchWindowException\n        elif status in ErrorCode.STALE_ELEMENT_REFERENCE:\n            exception_class = StaleElementReferenceException\n        elif status in ErrorCode.ELEMENT_NOT_VISIBLE:\n            exception_class = ElementNotVisibleException\n        elif status in ErrorCode.INVALID_ELEMENT_STATE:\n            exception_class = InvalidElementStateException\n        elif (\n            status in ErrorCode.INVALID_SELECTOR\n            or status in ErrorCode.INVALID_XPATH_SELECTOR\n            or status in ErrorCode.INVALID_XPATH_SELECTOR_RETURN_TYPER\n        ):\n            exception_class = InvalidSelectorException\n        elif status in ErrorCode.ELEMENT_IS_NOT_SELECTABLE:\n            exception_class = ElementNotSelectableException\n        elif status in ErrorCode.ELEMENT_NOT_INTERACTABLE:\n            exception_class = ElementNotInteractableException\n        elif status in ErrorCode.INVALID_COOKIE_DOMAIN:\n            exception_class = InvalidCookieDomainException\n        elif status in ErrorCode.UNABLE_TO_SET_COOKIE:\n            exception_class = UnableToSetCookieException\n        elif status in ErrorCode.TIMEOUT:\n            exception_class = TimeoutException\n        elif status in ErrorCode.SCRIPT_TIMEOUT:\n            exception_class = TimeoutException\n        elif status in ErrorCode.UNKNOWN_ERROR:\n            exception_class = WebDriverException\n        elif status in ErrorCode.UNEXPECTED_ALERT_OPEN:\n            exception_class = UnexpectedAlertPresentException\n        elif status in ErrorCode.NO_ALERT_OPEN:\n            exception_class = NoAlertPresentException\n        elif status in ErrorCode.IME_NOT_AVAILABLE:\n            exception_class = ImeNotAvailableException\n        elif status in ErrorCode.IME_ENGINE_ACTIVATION_FAILED:\n            exception_class = ImeActivationFailedException\n        elif status in ErrorCode.MOVE_TARGET_OUT_OF_BOUNDS:\n            exception_class = MoveTargetOutOfBoundsException\n        elif status in ErrorCode.JAVASCRIPT_ERROR:\n            exception_class = JavascriptException\n        elif status in ErrorCode.SESSION_NOT_CREATED:\n            exception_class = SessionNotCreatedException\n        elif status in ErrorCode.INVALID_ARGUMENT:\n            exception_class = InvalidArgumentException\n        elif status in ErrorCode.NO_SUCH_COOKIE:\n            exception_class = NoSuchCookieException\n        elif status in ErrorCode.UNABLE_TO_CAPTURE_SCREEN:\n            exception_class = ScreenshotException\n        elif status in ErrorCode.ELEMENT_CLICK_INTERCEPTED:\n            exception_class = ElementClickInterceptedException\n        elif status in ErrorCode.INSECURE_CERTIFICATE:\n            exception_class = InsecureCertificateException\n        elif status in ErrorCode.INVALID_COORDINATES:\n            exception_class = InvalidCoordinatesException\n        elif status in ErrorCode.INVALID_SESSION_ID:\n            exception_class = InvalidSessionIdException\n        elif status in ErrorCode.UNKNOWN_METHOD:\n            exception_class = UnknownMethodException\n        else:\n            exception_class = WebDriverException\n        if not value:\n            value = response[\&#34;value\&#34;]\n        if isinstance(value, str):\n            raise exception_class(value)\n        if message == \&#34;\&#34; and \&#34;message\&#34; in value:\n            message = value[\&#34;message\&#34;]\n    \n        screen = None  # type: ignore[assignment]\n        if \&#34;screen\&#34; in value:\n            screen = value[\&#34;screen\&#34;]\n    \n        stacktrace = None\n        st_value = value.get(\&#34;stackTrace\&#34;) or value.get(\&#34;stacktrace\&#34;)\n        if st_value:\n            if isinstance(st_value, str):\n                stacktrace = st_value.split(\&#34;\\n\&#34;)\n            else:\n                stacktrace = []\n                try:\n                    for frame in st_value:\n                        line = frame.get(\&#34;lineNumber\&#34;, \&#34;\&#34;)\n                        file = frame.get(\&#34;fileName\&#34;, \&#34;&amp;lt;anonymous&amp;gt;\&#34;)\n                        if line:\n                            file = f\&#34;{file}:{line}\&#34;\n                        meth = frame.get(\&#34;methodName\&#34;, \&#34;&amp;lt;anonymous&amp;gt;\&#34;)\n                        if \&#34;className\&#34; in frame:\n                            meth = f\&#34;{frame[&#39;className&#39;]}.{meth}\&#34;\n                        msg = \&#34;    at %s (%s)\&#34;\n                        msg = msg % (meth, file)\n                        stacktrace.append(msg)\n                except TypeError:\n                    pass\n        if exception_class == UnexpectedAlertPresentException:\n            alert_text = None\n            if \&#34;data\&#34; in value:\n                alert_text = value[\&#34;data\&#34;].get(\&#34;text\&#34;)\n            elif \&#34;alert\&#34; in value:\n                alert_text = value[\&#34;alert\&#34;].get(\&#34;text\&#34;)\n            raise exception_class(message, screen, stacktrace, alert_text)  # type: ignore[call-arg]  # mypy is not smart enough here\n&amp;gt;       raise exception_class(message, screen, stacktrace)\nE       selenium.common.exceptions.SessionNotCreatedException: Message: session not created: This version of ChromeDriver only supports Chrome version 114\nE       Current browser version is 117.0.5938.89 with binary path C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\nE       Stacktrace:\nE       Backtrace:\nE       \tGetHandleVerifier [0x0029A813+48355]\nE       \t(No symbol) [0x0022C4B1]\nE       \t(No symbol) [0x00135358]\nE       \t(No symbol) [0x001561AC]\nE       \t(No symbol) [0x00151EF3]\nE       \t(No symbol) [0x00150579]\nE       \t(No symbol) [0x00180C55]\nE       \t(No symbol) [0x0018093C]\nE       \t(No symbol) [0x0017A536]\nE       \t(No symbol) [0x001582DC]\nE       \t(No symbol) [0x001593DD]\nE       \tGetHandleVerifier [0x004FAABD+2539405]\nE       \tGetHandleVerifier [0x0053A78F+2800735]\nE       \tGetHandleVerifier [0x0053456C+2775612]\nE       \tGetHandleVerifier [0x003251E0+616112]\nE       \t(No symbol) [0x00235F8C]\nE       \t(No symbol) [0x00232328]\nE       \t(No symbol) [0x0023240B]\nE       \t(No symbol) [0x00224FF7]\nE       \tBaseThreadInitThunk [0x76857D59+25]\nE       \tRtlInitializeExceptionChain [0x77B7B79B+107]\nE       \tRtlClearBits [0x77B7B71F+191]\nE       \t(No symbol) [0x00000000]\n\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\errorhandler.py:245: SessionNotCreatedException\n&#34;}], &#34;tests/Fixture/class/test_google_cls.py::GoogleTest::test_check_google_2_cls&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Error&#34;, &#34;testId&#34;: &#34;tests/Fixture/class/test_google_cls.py::GoogleTest::test_check_google_2_cls::setup&#34;, &#34;duration&#34;: &#34;0 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Error&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;tests/Fixture/class/test_google_cls.py::GoogleTest::test_check_google_2_cls::setup&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;0 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;request = &amp;lt;SubRequest &#39;cls_browser&#39; for &amp;lt;Function test_check_google_1_cls&amp;gt;&amp;gt;\n\n    @pytest.fixture(scope=&#39;class&#39;)\n    def cls_browser(request):\n&amp;gt;       driver = webdriver.Chrome(options=options)\n\nconftest.py:24: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\chrome\\webdriver.py:80: in __init__\n    super().__init__(\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\chromium\\webdriver.py:104: in __init__\n    super().__init__(\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:286: in __init__\n    self.start_session(capabilities, browser_profile)\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:378: in start_session\n    response = self.execute(Command.NEW_SESSION, parameters)\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:440: in execute\n    self.error_handler.check_response(response)\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\nself = &amp;lt;selenium.webdriver.remote.errorhandler.ErrorHandler object at 0x0000029FB0FB9D10&amp;gt;\nresponse = {&#39;status&#39;: 500, &#39;value&#39;: &#39;{\&#34;value\&#34;:{\&#34;error\&#34;:\&#34;session not created\&#34;,\&#34;message\&#34;:\&#34;session not created: This version of Chro...\\tRtlInitializeExceptionChain [0x77B7B79B+107]\\\\n\\\\tRtlClearBits [0x77B7B71F+191]\\\\n\\\\t(No symbol) [0x00000000]\\\\n\&#34;}}&#39;}\n\n    def check_response(self, response: Dict[str, Any]) -&amp;gt; None:\n        \&#34;\&#34;\&#34;Checks that a JSON response from the WebDriver does not have an\n        error.\n    \n        :Args:\n         - response - The JSON response from the WebDriver server as a dictionary\n           object.\n    \n        :Raises: If the response contains an error message.\n        \&#34;\&#34;\&#34;\n        status = response.get(\&#34;status\&#34;, None)\n        if not status or status == ErrorCode.SUCCESS:\n            return\n        value = None\n        message = response.get(\&#34;message\&#34;, \&#34;\&#34;)\n        screen: str = response.get(\&#34;screen\&#34;, \&#34;\&#34;)\n        stacktrace = None\n        if isinstance(status, int):\n            value_json = response.get(\&#34;value\&#34;, None)\n            if value_json and isinstance(value_json, str):\n                import json\n    \n                try:\n                    value = json.loads(value_json)\n                    if len(value.keys()) == 1:\n                        value = value[\&#34;value\&#34;]\n                    status = value.get(\&#34;error\&#34;, None)\n                    if not status:\n                        status = value.get(\&#34;status\&#34;, ErrorCode.UNKNOWN_ERROR)\n                        message = value.get(\&#34;value\&#34;) or value.get(\&#34;message\&#34;)\n                        if not isinstance(message, str):\n                            value = message\n                            message = message.get(\&#34;message\&#34;)\n                    else:\n                        message = value.get(\&#34;message\&#34;, None)\n                except ValueError:\n                    pass\n    \n        exception_class: Type[WebDriverException]\n        if status in ErrorCode.NO_SUCH_ELEMENT:\n            exception_class = NoSuchElementException\n        elif status in ErrorCode.NO_SUCH_FRAME:\n            exception_class = NoSuchFrameException\n        elif status in ErrorCode.NO_SUCH_SHADOW_ROOT:\n            exception_class = NoSuchShadowRootException\n        elif status in ErrorCode.NO_SUCH_WINDOW:\n            exception_class = NoSuchWindowException\n        elif status in ErrorCode.STALE_ELEMENT_REFERENCE:\n            exception_class = StaleElementReferenceException\n        elif status in ErrorCode.ELEMENT_NOT_VISIBLE:\n            exception_class = ElementNotVisibleException\n        elif status in ErrorCode.INVALID_ELEMENT_STATE:\n            exception_class = InvalidElementStateException\n        elif (\n            status in ErrorCode.INVALID_SELECTOR\n            or status in ErrorCode.INVALID_XPATH_SELECTOR\n            or status in ErrorCode.INVALID_XPATH_SELECTOR_RETURN_TYPER\n        ):\n            exception_class = InvalidSelectorException\n        elif status in ErrorCode.ELEMENT_IS_NOT_SELECTABLE:\n            exception_class = ElementNotSelectableException\n        elif status in ErrorCode.ELEMENT_NOT_INTERACTABLE:\n            exception_class = ElementNotInteractableException\n        elif status in ErrorCode.INVALID_COOKIE_DOMAIN:\n            exception_class = InvalidCookieDomainException\n        elif status in ErrorCode.UNABLE_TO_SET_COOKIE:\n            exception_class = UnableToSetCookieException\n        elif status in ErrorCode.TIMEOUT:\n            exception_class = TimeoutException\n        elif status in ErrorCode.SCRIPT_TIMEOUT:\n            exception_class = TimeoutException\n        elif status in ErrorCode.UNKNOWN_ERROR:\n            exception_class = WebDriverException\n        elif status in ErrorCode.UNEXPECTED_ALERT_OPEN:\n            exception_class = UnexpectedAlertPresentException\n        elif status in ErrorCode.NO_ALERT_OPEN:\n            exception_class = NoAlertPresentException\n        elif status in ErrorCode.IME_NOT_AVAILABLE:\n            exception_class = ImeNotAvailableException\n        elif status in ErrorCode.IME_ENGINE_ACTIVATION_FAILED:\n            exception_class = ImeActivationFailedException\n        elif status in ErrorCode.MOVE_TARGET_OUT_OF_BOUNDS:\n            exception_class = MoveTargetOutOfBoundsException\n        elif status in ErrorCode.JAVASCRIPT_ERROR:\n            exception_class = JavascriptException\n        elif status in ErrorCode.SESSION_NOT_CREATED:\n            exception_class = SessionNotCreatedException\n        elif status in ErrorCode.INVALID_ARGUMENT:\n            exception_class = InvalidArgumentException\n        elif status in ErrorCode.NO_SUCH_COOKIE:\n            exception_class = NoSuchCookieException\n        elif status in ErrorCode.UNABLE_TO_CAPTURE_SCREEN:\n            exception_class = ScreenshotException\n        elif status in ErrorCode.ELEMENT_CLICK_INTERCEPTED:\n            exception_class = ElementClickInterceptedException\n        elif status in ErrorCode.INSECURE_CERTIFICATE:\n            exception_class = InsecureCertificateException\n        elif status in ErrorCode.INVALID_COORDINATES:\n            exception_class = InvalidCoordinatesException\n        elif status in ErrorCode.INVALID_SESSION_ID:\n            exception_class = InvalidSessionIdException\n        elif status in ErrorCode.UNKNOWN_METHOD:\n            exception_class = UnknownMethodException\n        else:\n            exception_class = WebDriverException\n        if not value:\n            value = response[\&#34;value\&#34;]\n        if isinstance(value, str):\n            raise exception_class(value)\n        if message == \&#34;\&#34; and \&#34;message\&#34; in value:\n            message = value[\&#34;message\&#34;]\n    \n        screen = None  # type: ignore[assignment]\n        if \&#34;screen\&#34; in value:\n            screen = value[\&#34;screen\&#34;]\n    \n        stacktrace = None\n        st_value = value.get(\&#34;stackTrace\&#34;) or value.get(\&#34;stacktrace\&#34;)\n        if st_value:\n            if isinstance(st_value, str):\n                stacktrace = st_value.split(\&#34;\\n\&#34;)\n            else:\n                stacktrace = []\n                try:\n                    for frame in st_value:\n                        line = frame.get(\&#34;lineNumber\&#34;, \&#34;\&#34;)\n                        file = frame.get(\&#34;fileName\&#34;, \&#34;&amp;lt;anonymous&amp;gt;\&#34;)\n                        if line:\n                            file = f\&#34;{file}:{line}\&#34;\n                        meth = frame.get(\&#34;methodName\&#34;, \&#34;&amp;lt;anonymous&amp;gt;\&#34;)\n                        if \&#34;className\&#34; in frame:\n                            meth = f\&#34;{frame[&#39;className&#39;]}.{meth}\&#34;\n                        msg = \&#34;    at %s (%s)\&#34;\n                        msg = msg % (meth, file)\n                        stacktrace.append(msg)\n                except TypeError:\n                    pass\n        if exception_class == UnexpectedAlertPresentException:\n            alert_text = None\n            if \&#34;data\&#34; in value:\n                alert_text = value[\&#34;data\&#34;].get(\&#34;text\&#34;)\n            elif \&#34;alert\&#34; in value:\n                alert_text = value[\&#34;alert\&#34;].get(\&#34;text\&#34;)\n            raise exception_class(message, screen, stacktrace, alert_text)  # type: ignore[call-arg]  # mypy is not smart enough here\n&amp;gt;       raise exception_class(message, screen, stacktrace)\nE       selenium.common.exceptions.SessionNotCreatedException: Message: session not created: This version of ChromeDriver only supports Chrome version 114\nE       Current browser version is 117.0.5938.89 with binary path C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\nE       Stacktrace:\nE       Backtrace:\nE       \tGetHandleVerifier [0x0029A813+48355]\nE       \t(No symbol) [0x0022C4B1]\nE       \t(No symbol) [0x00135358]\nE       \t(No symbol) [0x001561AC]\nE       \t(No symbol) [0x00151EF3]\nE       \t(No symbol) [0x00150579]\nE       \t(No symbol) [0x00180C55]\nE       \t(No symbol) [0x0018093C]\nE       \t(No symbol) [0x0017A536]\nE       \t(No symbol) [0x001582DC]\nE       \t(No symbol) [0x001593DD]\nE       \tGetHandleVerifier [0x004FAABD+2539405]\nE       \tGetHandleVerifier [0x0053A78F+2800735]\nE       \tGetHandleVerifier [0x0053456C+2775612]\nE       \tGetHandleVerifier [0x003251E0+616112]\nE       \t(No symbol) [0x00235F8C]\nE       \t(No symbol) [0x00232328]\nE       \t(No symbol) [0x0023240B]\nE       \t(No symbol) [0x00224FF7]\nE       \tBaseThreadInitThunk [0x76857D59+25]\nE       \tRtlInitializeExceptionChain [0x77B7B79B+107]\nE       \tRtlClearBits [0x77B7B71F+191]\nE       \t(No symbol) [0x00000000]\n\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\errorhandler.py:245: SessionNotCreatedException\n&#34;}], &#34;tests/Fixture/function/test_amazon_fun.py::AmznTest::test_check_amazon_fun&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Error&#34;, &#34;testId&#34;: &#34;tests/Fixture/function/test_amazon_fun.py::AmznTest::test_check_amazon_fun::setup&#34;, &#34;duration&#34;: &#34;00:00:03&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Error&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;tests/Fixture/function/test_amazon_fun.py::AmznTest::test_check_amazon_fun::setup&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:03&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;request = &amp;lt;SubRequest &#39;fun_browser&#39; for &amp;lt;Function test_check_amazon_fun&amp;gt;&amp;gt;\n\n    @pytest.fixture(scope=&#39;function&#39;)\n    def fun_browser(request):\n&amp;gt;       driver = webdriver.Chrome(options=options)\n\nconftest.py:17: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\chrome\\webdriver.py:80: in __init__\n    super().__init__(\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\chromium\\webdriver.py:104: in __init__\n    super().__init__(\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:286: in __init__\n    self.start_session(capabilities, browser_profile)\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:378: in start_session\n    response = self.execute(Command.NEW_SESSION, parameters)\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:440: in execute\n    self.error_handler.check_response(response)\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\nself = &amp;lt;selenium.webdriver.remote.errorhandler.ErrorHandler object at 0x0000029FB0FBDA50&amp;gt;\nresponse = {&#39;status&#39;: 500, &#39;value&#39;: &#39;{\&#34;value\&#34;:{\&#34;error\&#34;:\&#34;session not created\&#34;,\&#34;message\&#34;:\&#34;session not created: This version of Chro...\\tRtlInitializeExceptionChain [0x77B7B79B+107]\\\\n\\\\tRtlClearBits [0x77B7B71F+191]\\\\n\\\\t(No symbol) [0x00000000]\\\\n\&#34;}}&#39;}\n\n    def check_response(self, response: Dict[str, Any]) -&amp;gt; None:\n        \&#34;\&#34;\&#34;Checks that a JSON response from the WebDriver does not have an\n        error.\n    \n        :Args:\n         - response - The JSON response from the WebDriver server as a dictionary\n           object.\n    \n        :Raises: If the response contains an error message.\n        \&#34;\&#34;\&#34;\n        status = response.get(\&#34;status\&#34;, None)\n        if not status or status == ErrorCode.SUCCESS:\n            return\n        value = None\n        message = response.get(\&#34;message\&#34;, \&#34;\&#34;)\n        screen: str = response.get(\&#34;screen\&#34;, \&#34;\&#34;)\n        stacktrace = None\n        if isinstance(status, int):\n            value_json = response.get(\&#34;value\&#34;, None)\n            if value_json and isinstance(value_json, str):\n                import json\n    \n                try:\n                    value = json.loads(value_json)\n                    if len(value.keys()) == 1:\n                        value = value[\&#34;value\&#34;]\n                    status = value.get(\&#34;error\&#34;, None)\n                    if not status:\n                        status = value.get(\&#34;status\&#34;, ErrorCode.UNKNOWN_ERROR)\n                        message = value.get(\&#34;value\&#34;) or value.get(\&#34;message\&#34;)\n                        if not isinstance(message, str):\n                            value = message\n                            message = message.get(\&#34;message\&#34;)\n                    else:\n                        message = value.get(\&#34;message\&#34;, None)\n                except ValueError:\n                    pass\n    \n        exception_class: Type[WebDriverException]\n        if status in ErrorCode.NO_SUCH_ELEMENT:\n            exception_class = NoSuchElementException\n        elif status in ErrorCode.NO_SUCH_FRAME:\n            exception_class = NoSuchFrameException\n        elif status in ErrorCode.NO_SUCH_SHADOW_ROOT:\n            exception_class = NoSuchShadowRootException\n        elif status in ErrorCode.NO_SUCH_WINDOW:\n            exception_class = NoSuchWindowException\n        elif status in ErrorCode.STALE_ELEMENT_REFERENCE:\n            exception_class = StaleElementReferenceException\n        elif status in ErrorCode.ELEMENT_NOT_VISIBLE:\n            exception_class = ElementNotVisibleException\n        elif status in ErrorCode.INVALID_ELEMENT_STATE:\n            exception_class = InvalidElementStateException\n        elif (\n            status in ErrorCode.INVALID_SELECTOR\n            or status in ErrorCode.INVALID_XPATH_SELECTOR\n            or status in ErrorCode.INVALID_XPATH_SELECTOR_RETURN_TYPER\n        ):\n            exception_class = InvalidSelectorException\n        elif status in ErrorCode.ELEMENT_IS_NOT_SELECTABLE:\n            exception_class = ElementNotSelectableException\n        elif status in ErrorCode.ELEMENT_NOT_INTERACTABLE:\n            exception_class = ElementNotInteractableException\n        elif status in ErrorCode.INVALID_COOKIE_DOMAIN:\n            exception_class = InvalidCookieDomainException\n        elif status in ErrorCode.UNABLE_TO_SET_COOKIE:\n            exception_class = UnableToSetCookieException\n        elif status in ErrorCode.TIMEOUT:\n            exception_class = TimeoutException\n        elif status in ErrorCode.SCRIPT_TIMEOUT:\n            exception_class = TimeoutException\n        elif status in ErrorCode.UNKNOWN_ERROR:\n            exception_class = WebDriverException\n        elif status in ErrorCode.UNEXPECTED_ALERT_OPEN:\n            exception_class = UnexpectedAlertPresentException\n        elif status in ErrorCode.NO_ALERT_OPEN:\n            exception_class = NoAlertPresentException\n        elif status in ErrorCode.IME_NOT_AVAILABLE:\n            exception_class = ImeNotAvailableException\n        elif status in ErrorCode.IME_ENGINE_ACTIVATION_FAILED:\n            exception_class = ImeActivationFailedException\n        elif status in ErrorCode.MOVE_TARGET_OUT_OF_BOUNDS:\n            exception_class = MoveTargetOutOfBoundsException\n        elif status in ErrorCode.JAVASCRIPT_ERROR:\n            exception_class = JavascriptException\n        elif status in ErrorCode.SESSION_NOT_CREATED:\n            exception_class = SessionNotCreatedException\n        elif status in ErrorCode.INVALID_ARGUMENT:\n            exception_class = InvalidArgumentException\n        elif status in ErrorCode.NO_SUCH_COOKIE:\n            exception_class = NoSuchCookieException\n        elif status in ErrorCode.UNABLE_TO_CAPTURE_SCREEN:\n            exception_class = ScreenshotException\n        elif status in ErrorCode.ELEMENT_CLICK_INTERCEPTED:\n            exception_class = ElementClickInterceptedException\n        elif status in ErrorCode.INSECURE_CERTIFICATE:\n            exception_class = InsecureCertificateException\n        elif status in ErrorCode.INVALID_COORDINATES:\n            exception_class = InvalidCoordinatesException\n        elif status in ErrorCode.INVALID_SESSION_ID:\n            exception_class = InvalidSessionIdException\n        elif status in ErrorCode.UNKNOWN_METHOD:\n            exception_class = UnknownMethodException\n        else:\n            exception_class = WebDriverException\n        if not value:\n            value = response[\&#34;value\&#34;]\n        if isinstance(value, str):\n            raise exception_class(value)\n        if message == \&#34;\&#34; and \&#34;message\&#34; in value:\n            message = value[\&#34;message\&#34;]\n    \n        screen = None  # type: ignore[assignment]\n        if \&#34;screen\&#34; in value:\n            screen = value[\&#34;screen\&#34;]\n    \n        stacktrace = None\n        st_value = value.get(\&#34;stackTrace\&#34;) or value.get(\&#34;stacktrace\&#34;)\n        if st_value:\n            if isinstance(st_value, str):\n                stacktrace = st_value.split(\&#34;\\n\&#34;)\n            else:\n                stacktrace = []\n                try:\n                    for frame in st_value:\n                        line = frame.get(\&#34;lineNumber\&#34;, \&#34;\&#34;)\n                        file = frame.get(\&#34;fileName\&#34;, \&#34;&amp;lt;anonymous&amp;gt;\&#34;)\n                        if line:\n                            file = f\&#34;{file}:{line}\&#34;\n                        meth = frame.get(\&#34;methodName\&#34;, \&#34;&amp;lt;anonymous&amp;gt;\&#34;)\n                        if \&#34;className\&#34; in frame:\n                            meth = f\&#34;{frame[&#39;className&#39;]}.{meth}\&#34;\n                        msg = \&#34;    at %s (%s)\&#34;\n                        msg = msg % (meth, file)\n                        stacktrace.append(msg)\n                except TypeError:\n                    pass\n        if exception_class == UnexpectedAlertPresentException:\n            alert_text = None\n            if \&#34;data\&#34; in value:\n                alert_text = value[\&#34;data\&#34;].get(\&#34;text\&#34;)\n            elif \&#34;alert\&#34; in value:\n                alert_text = value[\&#34;alert\&#34;].get(\&#34;text\&#34;)\n            raise exception_class(message, screen, stacktrace, alert_text)  # type: ignore[call-arg]  # mypy is not smart enough here\n&amp;gt;       raise exception_class(message, screen, stacktrace)\nE       selenium.common.exceptions.SessionNotCreatedException: Message: session not created: This version of ChromeDriver only supports Chrome version 114\nE       Current browser version is 117.0.5938.89 with binary path C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\nE       Stacktrace:\nE       Backtrace:\nE       \tGetHandleVerifier [0x0029A813+48355]\nE       \t(No symbol) [0x0022C4B1]\nE       \t(No symbol) [0x00135358]\nE       \t(No symbol) [0x001561AC]\nE       \t(No symbol) [0x00151EF3]\nE       \t(No symbol) [0x00150579]\nE       \t(No symbol) [0x00180C55]\nE       \t(No symbol) [0x0018093C]\nE       \t(No symbol) [0x0017A536]\nE       \t(No symbol) [0x001582DC]\nE       \t(No symbol) [0x001593DD]\nE       \tGetHandleVerifier [0x004FAABD+2539405]\nE       \tGetHandleVerifier [0x0053A78F+2800735]\nE       \tGetHandleVerifier [0x0053456C+2775612]\nE       \tGetHandleVerifier [0x003251E0+616112]\nE       \t(No symbol) [0x00235F8C]\nE       \t(No symbol) [0x00232328]\nE       \t(No symbol) [0x0023240B]\nE       \t(No symbol) [0x00224FF7]\nE       \tBaseThreadInitThunk [0x76857D59+25]\nE       \tRtlInitializeExceptionChain [0x77B7B79B+107]\nE       \tRtlClearBits [0x77B7B71F+191]\nE       \t(No symbol) [0x00000000]\n\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\errorhandler.py:245: SessionNotCreatedException\n&#34;}], &#34;tests/Fixture/function/test_google_fun.py::GoogleTest::test_check_google_1_fun&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Error&#34;, &#34;testId&#34;: &#34;tests/Fixture/function/test_google_fun.py::GoogleTest::test_check_google_1_fun::setup&#34;, &#34;duration&#34;: &#34;00:00:03&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Error&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;tests/Fixture/function/test_google_fun.py::GoogleTest::test_check_google_1_fun::setup&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:03&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;request = &amp;lt;SubRequest &#39;fun_browser&#39; for &amp;lt;Function test_check_google_1_fun&amp;gt;&amp;gt;\n\n    @pytest.fixture(scope=&#39;function&#39;)\n    def fun_browser(request):\n&amp;gt;       driver = webdriver.Chrome(options=options)\n\nconftest.py:17: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\chrome\\webdriver.py:80: in __init__\n    super().__init__(\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\chromium\\webdriver.py:104: in __init__\n    super().__init__(\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:286: in __init__\n    self.start_session(capabilities, browser_profile)\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:378: in start_session\n    response = self.execute(Command.NEW_SESSION, parameters)\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:440: in execute\n    self.error_handler.check_response(response)\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\nself = &amp;lt;selenium.webdriver.remote.errorhandler.ErrorHandler object at 0x0000029FB0FC38D0&amp;gt;\nresponse = {&#39;status&#39;: 500, &#39;value&#39;: &#39;{\&#34;value\&#34;:{\&#34;error\&#34;:\&#34;session not created\&#34;,\&#34;message\&#34;:\&#34;session not created: This version of Chro...\\tRtlInitializeExceptionChain [0x77B7B79B+107]\\\\n\\\\tRtlClearBits [0x77B7B71F+191]\\\\n\\\\t(No symbol) [0x00000000]\\\\n\&#34;}}&#39;}\n\n    def check_response(self, response: Dict[str, Any]) -&amp;gt; None:\n        \&#34;\&#34;\&#34;Checks that a JSON response from the WebDriver does not have an\n        error.\n    \n        :Args:\n         - response - The JSON response from the WebDriver server as a dictionary\n           object.\n    \n        :Raises: If the response contains an error message.\n        \&#34;\&#34;\&#34;\n        status = response.get(\&#34;status\&#34;, None)\n        if not status or status == ErrorCode.SUCCESS:\n            return\n        value = None\n        message = response.get(\&#34;message\&#34;, \&#34;\&#34;)\n        screen: str = response.get(\&#34;screen\&#34;, \&#34;\&#34;)\n        stacktrace = None\n        if isinstance(status, int):\n            value_json = response.get(\&#34;value\&#34;, None)\n            if value_json and isinstance(value_json, str):\n                import json\n    \n                try:\n                    value = json.loads(value_json)\n                    if len(value.keys()) == 1:\n                        value = value[\&#34;value\&#34;]\n                    status = value.get(\&#34;error\&#34;, None)\n                    if not status:\n                        status = value.get(\&#34;status\&#34;, ErrorCode.UNKNOWN_ERROR)\n                        message = value.get(\&#34;value\&#34;) or value.get(\&#34;message\&#34;)\n                        if not isinstance(message, str):\n                            value = message\n                            message = message.get(\&#34;message\&#34;)\n                    else:\n                        message = value.get(\&#34;message\&#34;, None)\n                except ValueError:\n                    pass\n    \n        exception_class: Type[WebDriverException]\n        if status in ErrorCode.NO_SUCH_ELEMENT:\n            exception_class = NoSuchElementException\n        elif status in ErrorCode.NO_SUCH_FRAME:\n            exception_class = NoSuchFrameException\n        elif status in ErrorCode.NO_SUCH_SHADOW_ROOT:\n            exception_class = NoSuchShadowRootException\n        elif status in ErrorCode.NO_SUCH_WINDOW:\n            exception_class = NoSuchWindowException\n        elif status in ErrorCode.STALE_ELEMENT_REFERENCE:\n            exception_class = StaleElementReferenceException\n        elif status in ErrorCode.ELEMENT_NOT_VISIBLE:\n            exception_class = ElementNotVisibleException\n        elif status in ErrorCode.INVALID_ELEMENT_STATE:\n            exception_class = InvalidElementStateException\n        elif (\n            status in ErrorCode.INVALID_SELECTOR\n            or status in ErrorCode.INVALID_XPATH_SELECTOR\n            or status in ErrorCode.INVALID_XPATH_SELECTOR_RETURN_TYPER\n        ):\n            exception_class = InvalidSelectorException\n        elif status in ErrorCode.ELEMENT_IS_NOT_SELECTABLE:\n            exception_class = ElementNotSelectableException\n        elif status in ErrorCode.ELEMENT_NOT_INTERACTABLE:\n            exception_class = ElementNotInteractableException\n        elif status in ErrorCode.INVALID_COOKIE_DOMAIN:\n            exception_class = InvalidCookieDomainException\n        elif status in ErrorCode.UNABLE_TO_SET_COOKIE:\n            exception_class = UnableToSetCookieException\n        elif status in ErrorCode.TIMEOUT:\n            exception_class = TimeoutException\n        elif status in ErrorCode.SCRIPT_TIMEOUT:\n            exception_class = TimeoutException\n        elif status in ErrorCode.UNKNOWN_ERROR:\n            exception_class = WebDriverException\n        elif status in ErrorCode.UNEXPECTED_ALERT_OPEN:\n            exception_class = UnexpectedAlertPresentException\n        elif status in ErrorCode.NO_ALERT_OPEN:\n            exception_class = NoAlertPresentException\n        elif status in ErrorCode.IME_NOT_AVAILABLE:\n            exception_class = ImeNotAvailableException\n        elif status in ErrorCode.IME_ENGINE_ACTIVATION_FAILED:\n            exception_class = ImeActivationFailedException\n        elif status in ErrorCode.MOVE_TARGET_OUT_OF_BOUNDS:\n            exception_class = MoveTargetOutOfBoundsException\n        elif status in ErrorCode.JAVASCRIPT_ERROR:\n            exception_class = JavascriptException\n        elif status in ErrorCode.SESSION_NOT_CREATED:\n            exception_class = SessionNotCreatedException\n        elif status in ErrorCode.INVALID_ARGUMENT:\n            exception_class = InvalidArgumentException\n        elif status in ErrorCode.NO_SUCH_COOKIE:\n            exception_class = NoSuchCookieException\n        elif status in ErrorCode.UNABLE_TO_CAPTURE_SCREEN:\n            exception_class = ScreenshotException\n        elif status in ErrorCode.ELEMENT_CLICK_INTERCEPTED:\n            exception_class = ElementClickInterceptedException\n        elif status in ErrorCode.INSECURE_CERTIFICATE:\n            exception_class = InsecureCertificateException\n        elif status in ErrorCode.INVALID_COORDINATES:\n            exception_class = InvalidCoordinatesException\n        elif status in ErrorCode.INVALID_SESSION_ID:\n            exception_class = InvalidSessionIdException\n        elif status in ErrorCode.UNKNOWN_METHOD:\n            exception_class = UnknownMethodException\n        else:\n            exception_class = WebDriverException\n        if not value:\n            value = response[\&#34;value\&#34;]\n        if isinstance(value, str):\n            raise exception_class(value)\n        if message == \&#34;\&#34; and \&#34;message\&#34; in value:\n            message = value[\&#34;message\&#34;]\n    \n        screen = None  # type: ignore[assignment]\n        if \&#34;screen\&#34; in value:\n            screen = value[\&#34;screen\&#34;]\n    \n        stacktrace = None\n        st_value = value.get(\&#34;stackTrace\&#34;) or value.get(\&#34;stacktrace\&#34;)\n        if st_value:\n            if isinstance(st_value, str):\n                stacktrace = st_value.split(\&#34;\\n\&#34;)\n            else:\n                stacktrace = []\n                try:\n                    for frame in st_value:\n                        line = frame.get(\&#34;lineNumber\&#34;, \&#34;\&#34;)\n                        file = frame.get(\&#34;fileName\&#34;, \&#34;&amp;lt;anonymous&amp;gt;\&#34;)\n                        if line:\n                            file = f\&#34;{file}:{line}\&#34;\n                        meth = frame.get(\&#34;methodName\&#34;, \&#34;&amp;lt;anonymous&amp;gt;\&#34;)\n                        if \&#34;className\&#34; in frame:\n                            meth = f\&#34;{frame[&#39;className&#39;]}.{meth}\&#34;\n                        msg = \&#34;    at %s (%s)\&#34;\n                        msg = msg % (meth, file)\n                        stacktrace.append(msg)\n                except TypeError:\n                    pass\n        if exception_class == UnexpectedAlertPresentException:\n            alert_text = None\n            if \&#34;data\&#34; in value:\n                alert_text = value[\&#34;data\&#34;].get(\&#34;text\&#34;)\n            elif \&#34;alert\&#34; in value:\n                alert_text = value[\&#34;alert\&#34;].get(\&#34;text\&#34;)\n            raise exception_class(message, screen, stacktrace, alert_text)  # type: ignore[call-arg]  # mypy is not smart enough here\n&amp;gt;       raise exception_class(message, screen, stacktrace)\nE       selenium.common.exceptions.SessionNotCreatedException: Message: session not created: This version of ChromeDriver only supports Chrome version 114\nE       Current browser version is 117.0.5938.89 with binary path C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\nE       Stacktrace:\nE       Backtrace:\nE       \tGetHandleVerifier [0x0029A813+48355]\nE       \t(No symbol) [0x0022C4B1]\nE       \t(No symbol) [0x00135358]\nE       \t(No symbol) [0x001561AC]\nE       \t(No symbol) [0x00151EF3]\nE       \t(No symbol) [0x00150579]\nE       \t(No symbol) [0x00180C55]\nE       \t(No symbol) [0x0018093C]\nE       \t(No symbol) [0x0017A536]\nE       \t(No symbol) [0x001582DC]\nE       \t(No symbol) [0x001593DD]\nE       \tGetHandleVerifier [0x004FAABD+2539405]\nE       \tGetHandleVerifier [0x0053A78F+2800735]\nE       \tGetHandleVerifier [0x0053456C+2775612]\nE       \tGetHandleVerifier [0x003251E0+616112]\nE       \t(No symbol) [0x00235F8C]\nE       \t(No symbol) [0x00232328]\nE       \t(No symbol) [0x0023240B]\nE       \t(No symbol) [0x00224FF7]\nE       \tBaseThreadInitThunk [0x76857D59+25]\nE       \tRtlInitializeExceptionChain [0x77B7B79B+107]\nE       \tRtlClearBits [0x77B7B71F+191]\nE       \t(No symbol) [0x00000000]\n\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\errorhandler.py:245: SessionNotCreatedException\n&#34;}], &#34;tests/Fixture/function/test_google_fun.py::GoogleTest::test_check_google_2_fun&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Error&#34;, &#34;testId&#34;: &#34;tests/Fixture/function/test_google_fun.py::GoogleTest::test_check_google_2_fun::setup&#34;, &#34;duration&#34;: &#34;00:00:03&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Error&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;tests/Fixture/function/test_google_fun.py::GoogleTest::test_check_google_2_fun::setup&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:03&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;request = &amp;lt;SubRequest &#39;fun_browser&#39; for &amp;lt;Function test_check_google_2_fun&amp;gt;&amp;gt;\n\n    @pytest.fixture(scope=&#39;function&#39;)\n    def fun_browser(request):\n&amp;gt;       driver = webdriver.Chrome(options=options)\n\nconftest.py:17: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\chrome\\webdriver.py:80: in __init__\n    super().__init__(\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\chromium\\webdriver.py:104: in __init__\n    super().__init__(\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:286: in __init__\n    self.start_session(capabilities, browser_profile)\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:378: in start_session\n    response = self.execute(Command.NEW_SESSION, parameters)\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:440: in execute\n    self.error_handler.check_response(response)\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\nself = &amp;lt;selenium.webdriver.remote.errorhandler.ErrorHandler object at 0x0000029FB0FB9E10&amp;gt;\nresponse = {&#39;status&#39;: 500, &#39;value&#39;: &#39;{\&#34;value\&#34;:{\&#34;error\&#34;:\&#34;session not created\&#34;,\&#34;message\&#34;:\&#34;session not created: This version of Chro...\\tRtlInitializeExceptionChain [0x77B7B79B+107]\\\\n\\\\tRtlClearBits [0x77B7B71F+191]\\\\n\\\\t(No symbol) [0x00000000]\\\\n\&#34;}}&#39;}\n\n    def check_response(self, response: Dict[str, Any]) -&amp;gt; None:\n        \&#34;\&#34;\&#34;Checks that a JSON response from the WebDriver does not have an\n        error.\n    \n        :Args:\n         - response - The JSON response from the WebDriver server as a dictionary\n           object.\n    \n        :Raises: If the response contains an error message.\n        \&#34;\&#34;\&#34;\n        status = response.get(\&#34;status\&#34;, None)\n        if not status or status == ErrorCode.SUCCESS:\n            return\n        value = None\n        message = response.get(\&#34;message\&#34;, \&#34;\&#34;)\n        screen: str = response.get(\&#34;screen\&#34;, \&#34;\&#34;)\n        stacktrace = None\n        if isinstance(status, int):\n            value_json = response.get(\&#34;value\&#34;, None)\n            if value_json and isinstance(value_json, str):\n                import json\n    \n                try:\n                    value = json.loads(value_json)\n                    if len(value.keys()) == 1:\n                        value = value[\&#34;value\&#34;]\n                    status = value.get(\&#34;error\&#34;, None)\n                    if not status:\n                        status = value.get(\&#34;status\&#34;, ErrorCode.UNKNOWN_ERROR)\n                        message = value.get(\&#34;value\&#34;) or value.get(\&#34;message\&#34;)\n                        if not isinstance(message, str):\n                            value = message\n                            message = message.get(\&#34;message\&#34;)\n                    else:\n                        message = value.get(\&#34;message\&#34;, None)\n                except ValueError:\n                    pass\n    \n        exception_class: Type[WebDriverException]\n        if status in ErrorCode.NO_SUCH_ELEMENT:\n            exception_class = NoSuchElementException\n        elif status in ErrorCode.NO_SUCH_FRAME:\n            exception_class = NoSuchFrameException\n        elif status in ErrorCode.NO_SUCH_SHADOW_ROOT:\n            exception_class = NoSuchShadowRootException\n        elif status in ErrorCode.NO_SUCH_WINDOW:\n            exception_class = NoSuchWindowException\n        elif status in ErrorCode.STALE_ELEMENT_REFERENCE:\n            exception_class = StaleElementReferenceException\n        elif status in ErrorCode.ELEMENT_NOT_VISIBLE:\n            exception_class = ElementNotVisibleException\n        elif status in ErrorCode.INVALID_ELEMENT_STATE:\n            exception_class = InvalidElementStateException\n        elif (\n            status in ErrorCode.INVALID_SELECTOR\n            or status in ErrorCode.INVALID_XPATH_SELECTOR\n            or status in ErrorCode.INVALID_XPATH_SELECTOR_RETURN_TYPER\n        ):\n            exception_class = InvalidSelectorException\n        elif status in ErrorCode.ELEMENT_IS_NOT_SELECTABLE:\n            exception_class = ElementNotSelectableException\n        elif status in ErrorCode.ELEMENT_NOT_INTERACTABLE:\n            exception_class = ElementNotInteractableException\n        elif status in ErrorCode.INVALID_COOKIE_DOMAIN:\n            exception_class = InvalidCookieDomainException\n        elif status in ErrorCode.UNABLE_TO_SET_COOKIE:\n            exception_class = UnableToSetCookieException\n        elif status in ErrorCode.TIMEOUT:\n            exception_class = TimeoutException\n        elif status in ErrorCode.SCRIPT_TIMEOUT:\n            exception_class = TimeoutException\n        elif status in ErrorCode.UNKNOWN_ERROR:\n            exception_class = WebDriverException\n        elif status in ErrorCode.UNEXPECTED_ALERT_OPEN:\n            exception_class = UnexpectedAlertPresentException\n        elif status in ErrorCode.NO_ALERT_OPEN:\n            exception_class = NoAlertPresentException\n        elif status in ErrorCode.IME_NOT_AVAILABLE:\n            exception_class = ImeNotAvailableException\n        elif status in ErrorCode.IME_ENGINE_ACTIVATION_FAILED:\n            exception_class = ImeActivationFailedException\n        elif status in ErrorCode.MOVE_TARGET_OUT_OF_BOUNDS:\n            exception_class = MoveTargetOutOfBoundsException\n        elif status in ErrorCode.JAVASCRIPT_ERROR:\n            exception_class = JavascriptException\n        elif status in ErrorCode.SESSION_NOT_CREATED:\n            exception_class = SessionNotCreatedException\n        elif status in ErrorCode.INVALID_ARGUMENT:\n            exception_class = InvalidArgumentException\n        elif status in ErrorCode.NO_SUCH_COOKIE:\n            exception_class = NoSuchCookieException\n        elif status in ErrorCode.UNABLE_TO_CAPTURE_SCREEN:\n            exception_class = ScreenshotException\n        elif status in ErrorCode.ELEMENT_CLICK_INTERCEPTED:\n            exception_class = ElementClickInterceptedException\n        elif status in ErrorCode.INSECURE_CERTIFICATE:\n            exception_class = InsecureCertificateException\n        elif status in ErrorCode.INVALID_COORDINATES:\n            exception_class = InvalidCoordinatesException\n        elif status in ErrorCode.INVALID_SESSION_ID:\n            exception_class = InvalidSessionIdException\n        elif status in ErrorCode.UNKNOWN_METHOD:\n            exception_class = UnknownMethodException\n        else:\n            exception_class = WebDriverException\n        if not value:\n            value = response[\&#34;value\&#34;]\n        if isinstance(value, str):\n            raise exception_class(value)\n        if message == \&#34;\&#34; and \&#34;message\&#34; in value:\n            message = value[\&#34;message\&#34;]\n    \n        screen = None  # type: ignore[assignment]\n        if \&#34;screen\&#34; in value:\n            screen = value[\&#34;screen\&#34;]\n    \n        stacktrace = None\n        st_value = value.get(\&#34;stackTrace\&#34;) or value.get(\&#34;stacktrace\&#34;)\n        if st_value:\n            if isinstance(st_value, str):\n                stacktrace = st_value.split(\&#34;\\n\&#34;)\n            else:\n                stacktrace = []\n                try:\n                    for frame in st_value:\n                        line = frame.get(\&#34;lineNumber\&#34;, \&#34;\&#34;)\n                        file = frame.get(\&#34;fileName\&#34;, \&#34;&amp;lt;anonymous&amp;gt;\&#34;)\n                        if line:\n                            file = f\&#34;{file}:{line}\&#34;\n                        meth = frame.get(\&#34;methodName\&#34;, \&#34;&amp;lt;anonymous&amp;gt;\&#34;)\n                        if \&#34;className\&#34; in frame:\n                            meth = f\&#34;{frame[&#39;className&#39;]}.{meth}\&#34;\n                        msg = \&#34;    at %s (%s)\&#34;\n                        msg = msg % (meth, file)\n                        stacktrace.append(msg)\n                except TypeError:\n                    pass\n        if exception_class == UnexpectedAlertPresentException:\n            alert_text = None\n            if \&#34;data\&#34; in value:\n                alert_text = value[\&#34;data\&#34;].get(\&#34;text\&#34;)\n            elif \&#34;alert\&#34; in value:\n                alert_text = value[\&#34;alert\&#34;].get(\&#34;text\&#34;)\n            raise exception_class(message, screen, stacktrace, alert_text)  # type: ignore[call-arg]  # mypy is not smart enough here\n&amp;gt;       raise exception_class(message, screen, stacktrace)\nE       selenium.common.exceptions.SessionNotCreatedException: Message: session not created: This version of ChromeDriver only supports Chrome version 114\nE       Current browser version is 117.0.5938.89 with binary path C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\nE       Stacktrace:\nE       Backtrace:\nE       \tGetHandleVerifier [0x0029A813+48355]\nE       \t(No symbol) [0x0022C4B1]\nE       \t(No symbol) [0x00135358]\nE       \t(No symbol) [0x001561AC]\nE       \t(No symbol) [0x00151EF3]\nE       \t(No symbol) [0x00150579]\nE       \t(No symbol) [0x00180C55]\nE       \t(No symbol) [0x0018093C]\nE       \t(No symbol) [0x0017A536]\nE       \t(No symbol) [0x001582DC]\nE       \t(No symbol) [0x001593DD]\nE       \tGetHandleVerifier [0x004FAABD+2539405]\nE       \tGetHandleVerifier [0x0053A78F+2800735]\nE       \tGetHandleVerifier [0x0053456C+2775612]\nE       \tGetHandleVerifier [0x003251E0+616112]\nE       \t(No symbol) [0x00235F8C]\nE       \t(No symbol) [0x00232328]\nE       \t(No symbol) [0x0023240B]\nE       \t(No symbol) [0x00224FF7]\nE       \tBaseThreadInitThunk [0x76857D59+25]\nE       \tRtlInitializeExceptionChain [0x77B7B79B+107]\nE       \tRtlClearBits [0x77B7B71F+191]\nE       \t(No symbol) [0x00000000]\n\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\errorhandler.py:245: SessionNotCreatedException\n&#34;}], &#34;tests/Fixture/session/test_amazon_ssn.py::AmznTest::test_check_amazon_ssn&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Error&#34;, &#34;testId&#34;: &#34;tests/Fixture/session/test_amazon_ssn.py::AmznTest::test_check_amazon_ssn::setup&#34;, &#34;duration&#34;: &#34;00:00:03&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Error&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;tests/Fixture/session/test_amazon_ssn.py::AmznTest::test_check_amazon_ssn::setup&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:03&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;request = &amp;lt;SubRequest &#39;ssn_browser&#39; for &amp;lt;Function test_check_amazon_ssn&amp;gt;&amp;gt;\n\n    @pytest.fixture(scope=&#39;session&#39;)\n    def ssn_browser(request):\n&amp;gt;       driver = webdriver.Chrome(options=options)\n\nconftest.py:31: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\chrome\\webdriver.py:80: in __init__\n    super().__init__(\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\chromium\\webdriver.py:104: in __init__\n    super().__init__(\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:286: in __init__\n    self.start_session(capabilities, browser_profile)\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:378: in start_session\n    response = self.execute(Command.NEW_SESSION, parameters)\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:440: in execute\n    self.error_handler.check_response(response)\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\nself = &amp;lt;selenium.webdriver.remote.errorhandler.ErrorHandler object at 0x0000029FB0AB7C10&amp;gt;\nresponse = {&#39;status&#39;: 500, &#39;value&#39;: &#39;{\&#34;value\&#34;:{\&#34;error\&#34;:\&#34;session not created\&#34;,\&#34;message\&#34;:\&#34;session not created: This version of Chro...\\tRtlInitializeExceptionChain [0x77B7B79B+107]\\\\n\\\\tRtlClearBits [0x77B7B71F+191]\\\\n\\\\t(No symbol) [0x00000000]\\\\n\&#34;}}&#39;}\n\n    def check_response(self, response: Dict[str, Any]) -&amp;gt; None:\n        \&#34;\&#34;\&#34;Checks that a JSON response from the WebDriver does not have an\n        error.\n    \n        :Args:\n         - response - The JSON response from the WebDriver server as a dictionary\n           object.\n    \n        :Raises: If the response contains an error message.\n        \&#34;\&#34;\&#34;\n        status = response.get(\&#34;status\&#34;, None)\n        if not status or status == ErrorCode.SUCCESS:\n            return\n        value = None\n        message = response.get(\&#34;message\&#34;, \&#34;\&#34;)\n        screen: str = response.get(\&#34;screen\&#34;, \&#34;\&#34;)\n        stacktrace = None\n        if isinstance(status, int):\n            value_json = response.get(\&#34;value\&#34;, None)\n            if value_json and isinstance(value_json, str):\n                import json\n    \n                try:\n                    value = json.loads(value_json)\n                    if len(value.keys()) == 1:\n                        value = value[\&#34;value\&#34;]\n                    status = value.get(\&#34;error\&#34;, None)\n                    if not status:\n                        status = value.get(\&#34;status\&#34;, ErrorCode.UNKNOWN_ERROR)\n                        message = value.get(\&#34;value\&#34;) or value.get(\&#34;message\&#34;)\n                        if not isinstance(message, str):\n                            value = message\n                            message = message.get(\&#34;message\&#34;)\n                    else:\n                        message = value.get(\&#34;message\&#34;, None)\n                except ValueError:\n                    pass\n    \n        exception_class: Type[WebDriverException]\n        if status in ErrorCode.NO_SUCH_ELEMENT:\n            exception_class = NoSuchElementException\n        elif status in ErrorCode.NO_SUCH_FRAME:\n            exception_class = NoSuchFrameException\n        elif status in ErrorCode.NO_SUCH_SHADOW_ROOT:\n            exception_class = NoSuchShadowRootException\n        elif status in ErrorCode.NO_SUCH_WINDOW:\n            exception_class = NoSuchWindowException\n        elif status in ErrorCode.STALE_ELEMENT_REFERENCE:\n            exception_class = StaleElementReferenceException\n        elif status in ErrorCode.ELEMENT_NOT_VISIBLE:\n            exception_class = ElementNotVisibleException\n        elif status in ErrorCode.INVALID_ELEMENT_STATE:\n            exception_class = InvalidElementStateException\n        elif (\n            status in ErrorCode.INVALID_SELECTOR\n            or status in ErrorCode.INVALID_XPATH_SELECTOR\n            or status in ErrorCode.INVALID_XPATH_SELECTOR_RETURN_TYPER\n        ):\n            exception_class = InvalidSelectorException\n        elif status in ErrorCode.ELEMENT_IS_NOT_SELECTABLE:\n            exception_class = ElementNotSelectableException\n        elif status in ErrorCode.ELEMENT_NOT_INTERACTABLE:\n            exception_class = ElementNotInteractableException\n        elif status in ErrorCode.INVALID_COOKIE_DOMAIN:\n            exception_class = InvalidCookieDomainException\n        elif status in ErrorCode.UNABLE_TO_SET_COOKIE:\n            exception_class = UnableToSetCookieException\n        elif status in ErrorCode.TIMEOUT:\n            exception_class = TimeoutException\n        elif status in ErrorCode.SCRIPT_TIMEOUT:\n            exception_class = TimeoutException\n        elif status in ErrorCode.UNKNOWN_ERROR:\n            exception_class = WebDriverException\n        elif status in ErrorCode.UNEXPECTED_ALERT_OPEN:\n            exception_class = UnexpectedAlertPresentException\n        elif status in ErrorCode.NO_ALERT_OPEN:\n            exception_class = NoAlertPresentException\n        elif status in ErrorCode.IME_NOT_AVAILABLE:\n            exception_class = ImeNotAvailableException\n        elif status in ErrorCode.IME_ENGINE_ACTIVATION_FAILED:\n            exception_class = ImeActivationFailedException\n        elif status in ErrorCode.MOVE_TARGET_OUT_OF_BOUNDS:\n            exception_class = MoveTargetOutOfBoundsException\n        elif status in ErrorCode.JAVASCRIPT_ERROR:\n            exception_class = JavascriptException\n        elif status in ErrorCode.SESSION_NOT_CREATED:\n            exception_class = SessionNotCreatedException\n        elif status in ErrorCode.INVALID_ARGUMENT:\n            exception_class = InvalidArgumentException\n        elif status in ErrorCode.NO_SUCH_COOKIE:\n            exception_class = NoSuchCookieException\n        elif status in ErrorCode.UNABLE_TO_CAPTURE_SCREEN:\n            exception_class = ScreenshotException\n        elif status in ErrorCode.ELEMENT_CLICK_INTERCEPTED:\n            exception_class = ElementClickInterceptedException\n        elif status in ErrorCode.INSECURE_CERTIFICATE:\n            exception_class = InsecureCertificateException\n        elif status in ErrorCode.INVALID_COORDINATES:\n            exception_class = InvalidCoordinatesException\n        elif status in ErrorCode.INVALID_SESSION_ID:\n            exception_class = InvalidSessionIdException\n        elif status in ErrorCode.UNKNOWN_METHOD:\n            exception_class = UnknownMethodException\n        else:\n            exception_class = WebDriverException\n        if not value:\n            value = response[\&#34;value\&#34;]\n        if isinstance(value, str):\n            raise exception_class(value)\n        if message == \&#34;\&#34; and \&#34;message\&#34; in value:\n            message = value[\&#34;message\&#34;]\n    \n        screen = None  # type: ignore[assignment]\n        if \&#34;screen\&#34; in value:\n            screen = value[\&#34;screen\&#34;]\n    \n        stacktrace = None\n        st_value = value.get(\&#34;stackTrace\&#34;) or value.get(\&#34;stacktrace\&#34;)\n        if st_value:\n            if isinstance(st_value, str):\n                stacktrace = st_value.split(\&#34;\\n\&#34;)\n            else:\n                stacktrace = []\n                try:\n                    for frame in st_value:\n                        line = frame.get(\&#34;lineNumber\&#34;, \&#34;\&#34;)\n                        file = frame.get(\&#34;fileName\&#34;, \&#34;&amp;lt;anonymous&amp;gt;\&#34;)\n                        if line:\n                            file = f\&#34;{file}:{line}\&#34;\n                        meth = frame.get(\&#34;methodName\&#34;, \&#34;&amp;lt;anonymous&amp;gt;\&#34;)\n                        if \&#34;className\&#34; in frame:\n                            meth = f\&#34;{frame[&#39;className&#39;]}.{meth}\&#34;\n                        msg = \&#34;    at %s (%s)\&#34;\n                        msg = msg % (meth, file)\n                        stacktrace.append(msg)\n                except TypeError:\n                    pass\n        if exception_class == UnexpectedAlertPresentException:\n            alert_text = None\n            if \&#34;data\&#34; in value:\n                alert_text = value[\&#34;data\&#34;].get(\&#34;text\&#34;)\n            elif \&#34;alert\&#34; in value:\n                alert_text = value[\&#34;alert\&#34;].get(\&#34;text\&#34;)\n            raise exception_class(message, screen, stacktrace, alert_text)  # type: ignore[call-arg]  # mypy is not smart enough here\n&amp;gt;       raise exception_class(message, screen, stacktrace)\nE       selenium.common.exceptions.SessionNotCreatedException: Message: session not created: This version of ChromeDriver only supports Chrome version 114\nE       Current browser version is 117.0.5938.89 with binary path C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\nE       Stacktrace:\nE       Backtrace:\nE       \tGetHandleVerifier [0x0029A813+48355]\nE       \t(No symbol) [0x0022C4B1]\nE       \t(No symbol) [0x00135358]\nE       \t(No symbol) [0x001561AC]\nE       \t(No symbol) [0x00151EF3]\nE       \t(No symbol) [0x00150579]\nE       \t(No symbol) [0x00180C55]\nE       \t(No symbol) [0x0018093C]\nE       \t(No symbol) [0x0017A536]\nE       \t(No symbol) [0x001582DC]\nE       \t(No symbol) [0x001593DD]\nE       \tGetHandleVerifier [0x004FAABD+2539405]\nE       \tGetHandleVerifier [0x0053A78F+2800735]\nE       \tGetHandleVerifier [0x0053456C+2775612]\nE       \tGetHandleVerifier [0x003251E0+616112]\nE       \t(No symbol) [0x00235F8C]\nE       \t(No symbol) [0x00232328]\nE       \t(No symbol) [0x0023240B]\nE       \t(No symbol) [0x00224FF7]\nE       \tBaseThreadInitThunk [0x76857D59+25]\nE       \tRtlInitializeExceptionChain [0x77B7B79B+107]\nE       \tRtlClearBits [0x77B7B71F+191]\nE       \t(No symbol) [0x00000000]\n\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\errorhandler.py:245: SessionNotCreatedException\n&#34;}], &#34;tests/Fixture/session/test_google_ssn.py::GoogleTest::test_check_google_1_ssn&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Error&#34;, &#34;testId&#34;: &#34;tests/Fixture/session/test_google_ssn.py::GoogleTest::test_check_google_1_ssn::setup&#34;, &#34;duration&#34;: &#34;1 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Error&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;tests/Fixture/session/test_google_ssn.py::GoogleTest::test_check_google_1_ssn::setup&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;1 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;request = &amp;lt;SubRequest &#39;ssn_browser&#39; for &amp;lt;Function test_check_amazon_ssn&amp;gt;&amp;gt;\n\n    @pytest.fixture(scope=&#39;session&#39;)\n    def ssn_browser(request):\n&amp;gt;       driver = webdriver.Chrome(options=options)\n\nconftest.py:31: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\chrome\\webdriver.py:80: in __init__\n    super().__init__(\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\chromium\\webdriver.py:104: in __init__\n    super().__init__(\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:286: in __init__\n    self.start_session(capabilities, browser_profile)\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:378: in start_session\n    response = self.execute(Command.NEW_SESSION, parameters)\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:440: in execute\n    self.error_handler.check_response(response)\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\nself = &amp;lt;selenium.webdriver.remote.errorhandler.ErrorHandler object at 0x0000029FB0AB7C10&amp;gt;\nresponse = {&#39;status&#39;: 500, &#39;value&#39;: &#39;{\&#34;value\&#34;:{\&#34;error\&#34;:\&#34;session not created\&#34;,\&#34;message\&#34;:\&#34;session not created: This version of Chro...\\tRtlInitializeExceptionChain [0x77B7B79B+107]\\\\n\\\\tRtlClearBits [0x77B7B71F+191]\\\\n\\\\t(No symbol) [0x00000000]\\\\n\&#34;}}&#39;}\n\n    def check_response(self, response: Dict[str, Any]) -&amp;gt; None:\n        \&#34;\&#34;\&#34;Checks that a JSON response from the WebDriver does not have an\n        error.\n    \n        :Args:\n         - response - The JSON response from the WebDriver server as a dictionary\n           object.\n    \n        :Raises: If the response contains an error message.\n        \&#34;\&#34;\&#34;\n        status = response.get(\&#34;status\&#34;, None)\n        if not status or status == ErrorCode.SUCCESS:\n            return\n        value = None\n        message = response.get(\&#34;message\&#34;, \&#34;\&#34;)\n        screen: str = response.get(\&#34;screen\&#34;, \&#34;\&#34;)\n        stacktrace = None\n        if isinstance(status, int):\n            value_json = response.get(\&#34;value\&#34;, None)\n            if value_json and isinstance(value_json, str):\n                import json\n    \n                try:\n                    value = json.loads(value_json)\n                    if len(value.keys()) == 1:\n                        value = value[\&#34;value\&#34;]\n                    status = value.get(\&#34;error\&#34;, None)\n                    if not status:\n                        status = value.get(\&#34;status\&#34;, ErrorCode.UNKNOWN_ERROR)\n                        message = value.get(\&#34;value\&#34;) or value.get(\&#34;message\&#34;)\n                        if not isinstance(message, str):\n                            value = message\n                            message = message.get(\&#34;message\&#34;)\n                    else:\n                        message = value.get(\&#34;message\&#34;, None)\n                except ValueError:\n                    pass\n    \n        exception_class: Type[WebDriverException]\n        if status in ErrorCode.NO_SUCH_ELEMENT:\n            exception_class = NoSuchElementException\n        elif status in ErrorCode.NO_SUCH_FRAME:\n            exception_class = NoSuchFrameException\n        elif status in ErrorCode.NO_SUCH_SHADOW_ROOT:\n            exception_class = NoSuchShadowRootException\n        elif status in ErrorCode.NO_SUCH_WINDOW:\n            exception_class = NoSuchWindowException\n        elif status in ErrorCode.STALE_ELEMENT_REFERENCE:\n            exception_class = StaleElementReferenceException\n        elif status in ErrorCode.ELEMENT_NOT_VISIBLE:\n            exception_class = ElementNotVisibleException\n        elif status in ErrorCode.INVALID_ELEMENT_STATE:\n            exception_class = InvalidElementStateException\n        elif (\n            status in ErrorCode.INVALID_SELECTOR\n            or status in ErrorCode.INVALID_XPATH_SELECTOR\n            or status in ErrorCode.INVALID_XPATH_SELECTOR_RETURN_TYPER\n        ):\n            exception_class = InvalidSelectorException\n        elif status in ErrorCode.ELEMENT_IS_NOT_SELECTABLE:\n            exception_class = ElementNotSelectableException\n        elif status in ErrorCode.ELEMENT_NOT_INTERACTABLE:\n            exception_class = ElementNotInteractableException\n        elif status in ErrorCode.INVALID_COOKIE_DOMAIN:\n            exception_class = InvalidCookieDomainException\n        elif status in ErrorCode.UNABLE_TO_SET_COOKIE:\n            exception_class = UnableToSetCookieException\n        elif status in ErrorCode.TIMEOUT:\n            exception_class = TimeoutException\n        elif status in ErrorCode.SCRIPT_TIMEOUT:\n            exception_class = TimeoutException\n        elif status in ErrorCode.UNKNOWN_ERROR:\n            exception_class = WebDriverException\n        elif status in ErrorCode.UNEXPECTED_ALERT_OPEN:\n            exception_class = UnexpectedAlertPresentException\n        elif status in ErrorCode.NO_ALERT_OPEN:\n            exception_class = NoAlertPresentException\n        elif status in ErrorCode.IME_NOT_AVAILABLE:\n            exception_class = ImeNotAvailableException\n        elif status in ErrorCode.IME_ENGINE_ACTIVATION_FAILED:\n            exception_class = ImeActivationFailedException\n        elif status in ErrorCode.MOVE_TARGET_OUT_OF_BOUNDS:\n            exception_class = MoveTargetOutOfBoundsException\n        elif status in ErrorCode.JAVASCRIPT_ERROR:\n            exception_class = JavascriptException\n        elif status in ErrorCode.SESSION_NOT_CREATED:\n            exception_class = SessionNotCreatedException\n        elif status in ErrorCode.INVALID_ARGUMENT:\n            exception_class = InvalidArgumentException\n        elif status in ErrorCode.NO_SUCH_COOKIE:\n            exception_class = NoSuchCookieException\n        elif status in ErrorCode.UNABLE_TO_CAPTURE_SCREEN:\n            exception_class = ScreenshotException\n        elif status in ErrorCode.ELEMENT_CLICK_INTERCEPTED:\n            exception_class = ElementClickInterceptedException\n        elif status in ErrorCode.INSECURE_CERTIFICATE:\n            exception_class = InsecureCertificateException\n        elif status in ErrorCode.INVALID_COORDINATES:\n            exception_class = InvalidCoordinatesException\n        elif status in ErrorCode.INVALID_SESSION_ID:\n            exception_class = InvalidSessionIdException\n        elif status in ErrorCode.UNKNOWN_METHOD:\n            exception_class = UnknownMethodException\n        else:\n            exception_class = WebDriverException\n        if not value:\n            value = response[\&#34;value\&#34;]\n        if isinstance(value, str):\n            raise exception_class(value)\n        if message == \&#34;\&#34; and \&#34;message\&#34; in value:\n            message = value[\&#34;message\&#34;]\n    \n        screen = None  # type: ignore[assignment]\n        if \&#34;screen\&#34; in value:\n            screen = value[\&#34;screen\&#34;]\n    \n        stacktrace = None\n        st_value = value.get(\&#34;stackTrace\&#34;) or value.get(\&#34;stacktrace\&#34;)\n        if st_value:\n            if isinstance(st_value, str):\n                stacktrace = st_value.split(\&#34;\\n\&#34;)\n            else:\n                stacktrace = []\n                try:\n                    for frame in st_value:\n                        line = frame.get(\&#34;lineNumber\&#34;, \&#34;\&#34;)\n                        file = frame.get(\&#34;fileName\&#34;, \&#34;&amp;lt;anonymous&amp;gt;\&#34;)\n                        if line:\n                            file = f\&#34;{file}:{line}\&#34;\n                        meth = frame.get(\&#34;methodName\&#34;, \&#34;&amp;lt;anonymous&amp;gt;\&#34;)\n                        if \&#34;className\&#34; in frame:\n                            meth = f\&#34;{frame[&#39;className&#39;]}.{meth}\&#34;\n                        msg = \&#34;    at %s (%s)\&#34;\n                        msg = msg % (meth, file)\n                        stacktrace.append(msg)\n                except TypeError:\n                    pass\n        if exception_class == UnexpectedAlertPresentException:\n            alert_text = None\n            if \&#34;data\&#34; in value:\n                alert_text = value[\&#34;data\&#34;].get(\&#34;text\&#34;)\n            elif \&#34;alert\&#34; in value:\n                alert_text = value[\&#34;alert\&#34;].get(\&#34;text\&#34;)\n            raise exception_class(message, screen, stacktrace, alert_text)  # type: ignore[call-arg]  # mypy is not smart enough here\n&amp;gt;       raise exception_class(message, screen, stacktrace)\nE       selenium.common.exceptions.SessionNotCreatedException: Message: session not created: This version of ChromeDriver only supports Chrome version 114\nE       Current browser version is 117.0.5938.89 with binary path C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\nE       Stacktrace:\nE       Backtrace:\nE       \tGetHandleVerifier [0x0029A813+48355]\nE       \t(No symbol) [0x0022C4B1]\nE       \t(No symbol) [0x00135358]\nE       \t(No symbol) [0x001561AC]\nE       \t(No symbol) [0x00151EF3]\nE       \t(No symbol) [0x00150579]\nE       \t(No symbol) [0x00180C55]\nE       \t(No symbol) [0x0018093C]\nE       \t(No symbol) [0x0017A536]\nE       \t(No symbol) [0x001582DC]\nE       \t(No symbol) [0x001593DD]\nE       \tGetHandleVerifier [0x004FAABD+2539405]\nE       \tGetHandleVerifier [0x0053A78F+2800735]\nE       \tGetHandleVerifier [0x0053456C+2775612]\nE       \tGetHandleVerifier [0x003251E0+616112]\nE       \t(No symbol) [0x00235F8C]\nE       \t(No symbol) [0x00232328]\nE       \t(No symbol) [0x0023240B]\nE       \t(No symbol) [0x00224FF7]\nE       \tBaseThreadInitThunk [0x76857D59+25]\nE       \tRtlInitializeExceptionChain [0x77B7B79B+107]\nE       \tRtlClearBits [0x77B7B71F+191]\nE       \t(No symbol) [0x00000000]\n\n..\\..\\..\\Projects\\Scheduling_Pytest\\venv\\Lib\\site-packages\\selenium\\webdriver\\remote\\errorhandler.py:245: SessionNotCreatedException\n&#34;}], &#34;tests/Fixture/session/test_google_ssn.py::GoogleTest::test_check_google_2_ssn&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Skipped&#34;, &#34;testId&#34;: &#34;tests/Fixture/session/test_google_ssn.py::GoogleTest::test_check_google_2_ssn::setup&#34;, &#34;duration&#34;: &#34;0 ms&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Skipped&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;tests/Fixture/session/test_google_ssn.py::GoogleTest::test_check_google_2_ssn::setup&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;0 ms&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;(&#39;D:\\\\Workspace\\\\Python\\\\Learning\\\\Pytest\\\\basic\\\\tests\\\\Fixture\\\\session\\\\test_google_ssn.py&#39;, 11, &#39;Skipped: unconditional skip&#39;)\n&#34;}]}, &#34;renderCollapsed&#34;: [&#34;passed&#34;], &#34;initialSort&#34;: &#34;result&#34;, &#34;title&#34;: &#34;report.html&#34;}"></div>
+    <script>
+      (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
+const { getCollapsedCategory, setCollapsedIds } = require('./storage.js')
+
+class DataManager {
+    setManager(data) {
+        const collapsedCategories = [...getCollapsedCategory(data.renderCollapsed)]
+        const collapsedIds = []
+        const tests = Object.values(data.tests).flat().map((test, index) => {
+            const collapsed = collapsedCategories.includes(test.result.toLowerCase())
+            const id = `test_${index}`
+            if (collapsed) {
+                collapsedIds.push(id)
+            }
+            return {
+                ...test,
+                id,
+                collapsed,
+            }
+        })
+        const dataBlob = { ...data, tests }
+        this.data = { ...dataBlob }
+        this.renderData = { ...dataBlob }
+        setCollapsedIds(collapsedIds)
+    }
+
+    get allData() {
+        return { ...this.data }
+    }
+
+    resetRender() {
+        this.renderData = { ...this.data }
+    }
+
+    setRender(data) {
+        this.renderData.tests = [...data]
+    }
+
+    toggleCollapsedItem(id) {
+        this.renderData.tests = this.renderData.tests.map((test) =>
+            test.id === id ? { ...test, collapsed: !test.collapsed } : test,
+        )
+    }
+
+    set allCollapsed(collapsed) {
+        this.renderData = { ...this.renderData, tests: [...this.renderData.tests.map((test) => (
+            { ...test, collapsed }
+        ))] }
+    }
+
+    get testSubset() {
+        return [...this.renderData.tests]
+    }
+
+    get environment() {
+        return this.renderData.environment
+    }
+
+    get initialSort() {
+        return this.data.initialSort
+    }
+}
+
+module.exports = {
+    manager: new DataManager(),
+}
+
+},{"./storage.js":8}],2:[function(require,module,exports){
+const mediaViewer = require('./mediaviewer.js')
+const templateEnvRow = document.getElementById('template_environment_row')
+const templateResult = document.getElementById('template_results-table__tbody')
+
+function htmlToElements(html) {
+    const temp = document.createElement('template')
+    temp.innerHTML = html
+    return temp.content.childNodes
+}
+
+const find = (selector, elem) => {
+    if (!elem) {
+        elem = document
+    }
+    return elem.querySelector(selector)
+}
+
+const findAll = (selector, elem) => {
+    if (!elem) {
+        elem = document
+    }
+    return [...elem.querySelectorAll(selector)]
+}
+
+const dom = {
+    getStaticRow: (key, value) => {
+        const envRow = templateEnvRow.content.cloneNode(true)
+        const isObj = typeof value === 'object' && value !== null
+        const values = isObj ? Object.keys(value).map((k) => `${k}: ${value[k]}`) : null
+
+        const valuesElement = htmlToElements(
+            values ? `<ul>${values.map((val) => `<li>${val}</li>`).join('')}<ul>` : `<div>${value}</div>`)[0]
+        const td = findAll('td', envRow)
+        td[0].textContent = key
+        td[1].appendChild(valuesElement)
+
+        return envRow
+    },
+    getResultTBody: ({ testId, id, log, extras, resultsTableRow, tableHtml, result, collapsed }) => {
+        const resultBody = templateResult.content.cloneNode(true)
+        resultBody.querySelector('tbody').classList.add(result.toLowerCase())
+        resultBody.querySelector('tbody').id = testId
+        resultBody.querySelector('.collapsible').dataset.id = id
+
+        resultsTableRow.forEach((html) => {
+            const t = document.createElement('template')
+            t.innerHTML = html
+            resultBody.querySelector('.collapsible').appendChild(t.content)
+        })
+
+        if (log) {
+            // Wrap lines starting with "E" with span.error to color those lines red
+            const wrappedLog = log.replace(/^E.*$/gm, (match) => `<span class="error">${match}</span>`)
+            resultBody.querySelector('.log').innerHTML = wrappedLog
+        } else {
+            resultBody.querySelector('.log').remove()
+        }
+
+        if (collapsed) {
+            resultBody.querySelector('.collapsible > td')?.classList.add('collapsed')
+            resultBody.querySelector('.extras-row').classList.add('hidden')
+        } else {
+            resultBody.querySelector('.collapsible > td')?.classList.remove('collapsed')
+        }
+
+        const media = []
+        extras?.forEach(({ name, format_type, content }) => {
+            if (['image', 'video'].includes(format_type)) {
+                media.push({ path: content, name, format_type })
+            }
+
+            if (format_type === 'html') {
+                resultBody.querySelector('.extraHTML').insertAdjacentHTML('beforeend', `<div>${content}</div>`)
+            }
+        })
+        mediaViewer.setup(resultBody, media)
+
+        // Add custom html from the pytest_html_results_table_html hook
+        tableHtml?.forEach((item) => {
+            resultBody.querySelector('td[class="extra"]').insertAdjacentHTML('beforeend', item)
+        })
+
+        return resultBody
+    },
+}
+
+module.exports = {
+    dom,
+    htmlToElements,
+    find,
+    findAll,
+}
+
+},{"./mediaviewer.js":6}],3:[function(require,module,exports){
+const { manager } = require('./datamanager.js')
+const { doSort } = require('./sort.js')
+const storageModule = require('./storage.js')
+
+const getFilteredSubSet = (filter) =>
+    manager.allData.tests.filter(({ result }) => filter.includes(result.toLowerCase()))
+
+const doInitFilter = () => {
+    const currentFilter = storageModule.getVisible()
+    const filteredSubset = getFilteredSubSet(currentFilter)
+    manager.setRender(filteredSubset)
+}
+
+const doFilter = (type, show) => {
+    if (show) {
+        storageModule.showCategory(type)
+    } else {
+        storageModule.hideCategory(type)
+    }
+
+    const currentFilter = storageModule.getVisible()
+    const filteredSubset = getFilteredSubSet(currentFilter)
+    manager.setRender(filteredSubset)
+
+    const sortColumn = storageModule.getSort()
+    doSort(sortColumn, true)
+}
+
+module.exports = {
+    doFilter,
+    doInitFilter,
+}
+
+},{"./datamanager.js":1,"./sort.js":7,"./storage.js":8}],4:[function(require,module,exports){
+const { redraw, bindEvents, renderStatic } = require('./main.js')
+const { doInitFilter } = require('./filter.js')
+const { doInitSort } = require('./sort.js')
+const { manager } = require('./datamanager.js')
+const data = JSON.parse(document.getElementById('data-container').dataset.jsonblob)
+
+function init() {
+    manager.setManager(data)
+    doInitFilter()
+    doInitSort()
+    renderStatic()
+    redraw()
+    bindEvents()
+}
+
+init()
+
+},{"./datamanager.js":1,"./filter.js":3,"./main.js":5,"./sort.js":7}],5:[function(require,module,exports){
+const { dom, find, findAll } = require('./dom.js')
+const { manager } = require('./datamanager.js')
+const { doSort } = require('./sort.js')
+const { doFilter } = require('./filter.js')
+const {
+    getVisible,
+    getCollapsedIds,
+    setCollapsedIds,
+    getSort,
+    getSortDirection,
+    possibleFilters,
+} = require('./storage.js')
+
+const removeChildren = (node) => {
+    while (node.firstChild) {
+        node.removeChild(node.firstChild)
+    }
+}
+
+const renderStatic = () => {
+    const renderEnvironmentTable = () => {
+        const environment = manager.environment
+        const rows = Object.keys(environment).map((key) => dom.getStaticRow(key, environment[key]))
+        const table = document.getElementById('environment')
+        removeChildren(table)
+        rows.forEach((row) => table.appendChild(row))
+    }
+    renderEnvironmentTable()
+}
+
+const addItemToggleListener = (elem) => {
+    elem.addEventListener('click', ({ target }) => {
+        const id = target.parentElement.dataset.id
+        manager.toggleCollapsedItem(id)
+
+        const collapsedIds = getCollapsedIds()
+        if (collapsedIds.includes(id)) {
+            const updated = collapsedIds.filter((item) => item !== id)
+            setCollapsedIds(updated)
+        } else {
+            collapsedIds.push(id)
+            setCollapsedIds(collapsedIds)
+        }
+        redraw()
+    })
+}
+
+const renderContent = (tests) => {
+    const sortAttr = getSort(manager.initialSort)
+    const sortAsc = JSON.parse(getSortDirection())
+    const rows = tests.map(dom.getResultTBody)
+    const table = document.getElementById('results-table')
+    const tableHeader = document.getElementById('results-table-head')
+
+    const newTable = document.createElement('table')
+    newTable.id = 'results-table'
+
+    // remove all sorting classes and set the relevant
+    findAll('.sortable', tableHeader).forEach((elem) => elem.classList.remove('asc', 'desc'))
+    tableHeader.querySelector(`.sortable[data-column-type="${sortAttr}"]`).classList.add(sortAsc ? 'desc' : 'asc')
+    newTable.appendChild(tableHeader)
+
+    if (!rows.length) {
+        const emptyTable = document.getElementById('template_results-table__body--empty').content.cloneNode(true)
+        newTable.appendChild(emptyTable)
+    } else {
+        rows.forEach((row) => {
+            if (!!row) {
+                findAll('.collapsible td:not(.col-links', row).forEach(addItemToggleListener)
+                find('.logexpander', row).addEventListener('click',
+                    (evt) => evt.target.parentNode.classList.toggle('expanded'),
+                )
+                newTable.appendChild(row)
+            }
+        })
+    }
+
+    table.replaceWith(newTable)
+}
+
+const renderDerived = () => {
+    const currentFilter = getVisible()
+    possibleFilters.forEach((result) => {
+        const input = document.querySelector(`input[data-test-result="${result}"]`)
+        input.checked = currentFilter.includes(result)
+    })
+}
+
+const bindEvents = () => {
+    const filterColumn = (evt) => {
+        const { target: element } = evt
+        const { testResult } = element.dataset
+
+        doFilter(testResult, element.checked)
+        const collapsedIds = getCollapsedIds()
+        const updated = manager.renderData.tests.map((test) => {
+            return {
+                ...test,
+                collapsed: collapsedIds.includes(test.id),
+            }
+        })
+        manager.setRender(updated)
+        redraw()
+    }
+
+    const header = document.getElementById('environment-header')
+    header.addEventListener('click', () => {
+        const table = document.getElementById('environment')
+        table.classList.toggle('hidden')
+        header.classList.toggle('collapsed')
+    })
+
+    findAll('input[name="filter_checkbox"]').forEach((elem) => {
+        elem.addEventListener('click', filterColumn)
+    })
+
+    findAll('.sortable').forEach((elem) => {
+        elem.addEventListener('click', (evt) => {
+            const { target: element } = evt
+            const { columnType } = element.dataset
+            doSort(columnType)
+            redraw()
+        })
+    })
+
+    document.getElementById('show_all_details').addEventListener('click', () => {
+        manager.allCollapsed = false
+        setCollapsedIds([])
+        redraw()
+    })
+    document.getElementById('hide_all_details').addEventListener('click', () => {
+        manager.allCollapsed = true
+        const allIds = manager.renderData.tests.map((test) => test.id)
+        setCollapsedIds(allIds)
+        redraw()
+    })
+}
+
+const redraw = () => {
+    const { testSubset } = manager
+
+    renderContent(testSubset)
+    renderDerived()
+}
+
+module.exports = {
+    redraw,
+    bindEvents,
+    renderStatic,
+}
+
+},{"./datamanager.js":1,"./dom.js":2,"./filter.js":3,"./sort.js":7,"./storage.js":8}],6:[function(require,module,exports){
+class MediaViewer {
+    constructor(assets) {
+        this.assets = assets
+        this.index = 0
+    }
+
+    nextActive() {
+        this.index = this.index === this.assets.length - 1 ? 0 : this.index + 1
+        return [this.activeFile, this.index]
+    }
+
+    prevActive() {
+        this.index = this.index === 0 ? this.assets.length - 1 : this.index -1
+        return [this.activeFile, this.index]
+    }
+
+    get currentIndex() {
+        return this.index
+    }
+
+    get activeFile() {
+        return this.assets[this.index]
+    }
+}
+
+
+const setup = (resultBody, assets) => {
+    if (!assets.length) {
+        resultBody.querySelector('.media').classList.add('hidden')
+        return
+    }
+
+    const mediaViewer = new MediaViewer(assets)
+    const container = resultBody.querySelector('.media-container')
+    const leftArrow = resultBody.querySelector('.media-container__nav--left')
+    const rightArrow = resultBody.querySelector('.media-container__nav--right')
+    const mediaName = resultBody.querySelector('.media__name')
+    const counter = resultBody.querySelector('.media__counter')
+    const imageEl = resultBody.querySelector('img')
+    const sourceEl = resultBody.querySelector('source')
+    const videoEl = resultBody.querySelector('video')
+
+    const setImg = (media, index) => {
+        if (media?.format_type === 'image') {
+            imageEl.src = media.path
+
+            imageEl.classList.remove('hidden')
+            videoEl.classList.add('hidden')
+        } else if (media?.format_type === 'video') {
+            sourceEl.src = media.path
+
+            videoEl.classList.remove('hidden')
+            imageEl.classList.add('hidden')
+        }
+
+        mediaName.innerText = media?.name
+        counter.innerText = `${index + 1} / ${assets.length}`
+    }
+    setImg(mediaViewer.activeFile, mediaViewer.currentIndex)
+
+    const moveLeft = () => {
+        const [media, index] = mediaViewer.prevActive()
+        setImg(media, index)
+    }
+    const doRight = () => {
+        const [media, index] = mediaViewer.nextActive()
+        setImg(media, index)
+    }
+    const openImg = () => {
+        window.open(mediaViewer.activeFile.path, '_blank')
+    }
+    if (assets.length === 1) {
+        container.classList.add('media-container--fullscreen')
+    } else {
+        leftArrow.addEventListener('click', moveLeft)
+        rightArrow.addEventListener('click', doRight)
+    }
+    imageEl.addEventListener('click', openImg)
+}
+
+module.exports = {
+    setup,
+}
+
+},{}],7:[function(require,module,exports){
+const { manager } = require('./datamanager.js')
+const storageModule = require('./storage.js')
+
+const genericSort = (list, key, ascending, customOrder) => {
+    let sorted
+    if (customOrder) {
+        sorted = list.sort((a, b) => {
+            const aValue = a.result.toLowerCase()
+            const bValue = b.result.toLowerCase()
+
+            const aIndex = customOrder.findIndex((item) => item.toLowerCase() === aValue)
+            const bIndex = customOrder.findIndex((item) => item.toLowerCase() === bValue)
+
+            // Compare the indices to determine the sort order
+            return aIndex - bIndex
+        })
+    } else {
+        sorted = list.sort((a, b) => a[key] === b[key] ? 0 : a[key] > b[key] ? 1 : -1)
+    }
+
+    if (ascending) {
+        sorted.reverse()
+    }
+    return sorted
+}
+
+const durationSort = (list, ascending) => {
+    const parseDuration = (duration) => {
+        if (duration.includes(':')) {
+            // If it's in the format "HH:mm:ss"
+            const [hours, minutes, seconds] = duration.split(':').map(Number)
+            return (hours * 3600 + minutes * 60 + seconds) * 1000
+        } else {
+            // If it's in the format "nnn ms"
+            return parseInt(duration)
+        }
+    }
+    const sorted = list.sort((a, b) => parseDuration(a['duration']) - parseDuration(b['duration']))
+    if (ascending) {
+        sorted.reverse()
+    }
+    return sorted
+}
+
+const doInitSort = () => {
+    const type = storageModule.getSort(manager.initialSort)
+    const ascending = storageModule.getSortDirection()
+    const list = manager.testSubset
+    const initialOrder = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed', 'Skipped', 'Passed']
+
+    storageModule.setSort(type)
+    storageModule.setSortDirection(ascending)
+
+    if (type?.toLowerCase() === 'original') {
+        manager.setRender(list)
+    } else {
+        let sortedList
+        switch (type) {
+        case 'duration':
+            sortedList = durationSort(list, ascending)
+            break
+        case 'result':
+            sortedList = genericSort(list, type, ascending, initialOrder)
+            break
+        default:
+            sortedList = genericSort(list, type, ascending)
+            break
+        }
+        manager.setRender(sortedList)
+    }
+}
+
+const doSort = (type, skipDirection) => {
+    const newSortType = storageModule.getSort(manager.initialSort) !== type
+    const currentAsc = storageModule.getSortDirection()
+    let ascending
+    if (skipDirection) {
+        ascending = currentAsc
+    } else {
+        ascending = newSortType ? false : !currentAsc
+    }
+    storageModule.setSort(type)
+    storageModule.setSortDirection(ascending)
+
+    const list = manager.testSubset
+    const sortedList = type === 'duration' ? durationSort(list, ascending) : genericSort(list, type, ascending)
+    manager.setRender(sortedList)
+}
+
+module.exports = {
+    doInitSort,
+    doSort,
+}
+
+},{"./datamanager.js":1,"./storage.js":8}],8:[function(require,module,exports){
+const possibleFilters = [
+    'passed',
+    'skipped',
+    'failed',
+    'error',
+    'xfailed',
+    'xpassed',
+    'rerun',
+]
+
+const getVisible = () => {
+    const url = new URL(window.location.href)
+    const settings = new URLSearchParams(url.search).get('visible')
+    const lower = (item) => {
+        const lowerItem = item.toLowerCase()
+        if (possibleFilters.includes(lowerItem)) {
+            return lowerItem
+        }
+        return null
+    }
+    return settings === null ?
+        possibleFilters :
+        [...new Set(settings?.split(',').map(lower).filter((item) => item))]
+}
+
+const hideCategory = (categoryToHide) => {
+    const url = new URL(window.location.href)
+    const visibleParams = new URLSearchParams(url.search).get('visible')
+    const currentVisible = visibleParams ? visibleParams.split(',') : [...possibleFilters]
+    const settings = [...new Set(currentVisible)].filter((f) => f !== categoryToHide).join(',')
+
+    url.searchParams.set('visible', settings)
+    window.history.pushState({}, null, unescape(url.href))
+}
+
+const showCategory = (categoryToShow) => {
+    if (typeof window === 'undefined') {
+        return
+    }
+    const url = new URL(window.location.href)
+    const currentVisible = new URLSearchParams(url.search).get('visible')?.split(',').filter(Boolean) ||
+        [...possibleFilters]
+    const settings = [...new Set([categoryToShow, ...currentVisible])]
+    const noFilter = possibleFilters.length === settings.length || !settings.length
+
+    noFilter ? url.searchParams.delete('visible') : url.searchParams.set('visible', settings.join(','))
+    window.history.pushState({}, null, unescape(url.href))
+}
+
+const getSort = (initialSort) => {
+    const url = new URL(window.location.href)
+    let sort = new URLSearchParams(url.search).get('sort')
+    if (!sort) {
+        sort = initialSort || 'result'
+    }
+    return sort
+}
+
+const setSort = (type) => {
+    const url = new URL(window.location.href)
+    url.searchParams.set('sort', type)
+    window.history.pushState({}, null, unescape(url.href))
+}
+
+const getCollapsedCategory = (renderCollapsed) => {
+    let categories
+    if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href)
+        const collapsedItems = new URLSearchParams(url.search).get('collapsed')
+        switch (true) {
+        case !renderCollapsed && collapsedItems === null:
+            categories = ['passed']
+            break
+        case collapsedItems?.length === 0 || /^["']{2}$/.test(collapsedItems):
+            categories = []
+            break
+        case /^all$/.test(collapsedItems) || collapsedItems === null && /^all$/.test(renderCollapsed):
+            categories = [...possibleFilters]
+            break
+        default:
+            categories = collapsedItems?.split(',').map((item) => item.toLowerCase()) || renderCollapsed
+            break
+        }
+    } else {
+        categories = []
+    }
+    return categories
+}
+
+const getSortDirection = () => JSON.parse(sessionStorage.getItem('sortAsc')) || false
+const setSortDirection = (ascending) => sessionStorage.setItem('sortAsc', ascending)
+
+const getCollapsedIds = () => JSON.parse(sessionStorage.getItem('collapsedIds')) || []
+const setCollapsedIds = (list) => sessionStorage.setItem('collapsedIds', JSON.stringify(list))
+
+module.exports = {
+    getVisible,
+    hideCategory,
+    showCategory,
+    getCollapsedIds,
+    setCollapsedIds,
+    getSort,
+    setSort,
+    getSortDirection,
+    setSortDirection,
+    getCollapsedCategory,
+    possibleFilters,
+}
+
+},{}]},{},[4]);
+    </script>
+  </footer>
+</html>

@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8"/>
-    <title>report.html</title>
+    <title>log.html</title>
     <link href="assets/style.css" rel="stylesheet" type="text/css"/></head>
   <body onLoad="init()">
     <script>/* This Source Code Form is subject to the terms of the Mozilla Public
@@ -252,28 +252,11 @@ function filterTable(elem) { // eslint-disable-line no-unused-vars
     notFoundMessage.hidden = !allRowsHidden;
 }
 </script>
-    <h1>report.html</h1>
-    <p>Report generated on 06-Dec-2022 at 20:38:38 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a> v3.2.0</p>
-    <h2>Environment</h2>
-    <table id="environment">
-      <tr>
-        <td>JAVA_HOME</td>
-        <td>C:\Program Files\Java\jdk1.8.0_311</td></tr>
-      <tr>
-        <td>Packages</td>
-        <td>{"pluggy": "0.13.1", "pytest": "6.2.5"}</td></tr>
-      <tr>
-        <td>Platform</td>
-        <td>Windows-10-10.0.19042-SP0</td></tr>
-      <tr>
-        <td>Plugins</td>
-        <td>{"Faker": "15.0.0", "html": "3.2.0", "metadata": "2.0.4"}</td></tr>
-      <tr>
-        <td>Python</td>
-        <td>3.9.7</td></tr></table>
+    <h1>log.html</h1>
+    <p>Report generated on 20-Aug-2023 at 23:30:39 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a> v3.2.0</p>
     <h2>Summary</h2>
-    <p>4 tests ran in 19.06 seconds. </p>
-    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="passed">2 passed</span>, <input checked="true" class="filter" data-test-result="skipped" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="skipped">0 skipped</span>, <input checked="true" class="filter" data-test-result="failed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="failed">2 failed</span>, <input checked="true" class="filter" data-test-result="error" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="error">0 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>
+    <p>8 tests ran in 27.38 seconds. </p>
+    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="passed">8 passed</span>, <input checked="true" class="filter" data-test-result="skipped" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="skipped">1 skipped</span>, <input checked="true" class="filter" data-test-result="failed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="failed">0 failed</span>, <input checked="true" class="filter" data-test-result="error" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="error">0 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>
     <h2>Results</h2>
     <table id="results-table">
       <thead id="results-table-head">
@@ -284,51 +267,92 @@ function filterTable(elem) { // eslint-disable-line no-unused-vars
           <th class="sortable links" col="links">Links</th></tr>
         <tr hidden="true" id="not-found-message">
           <th colspan="4">No results found. Try to check the filters</th></tr></thead>
-      <tbody class="failed results-table-row">
+      <tbody class="skipped results-table-row">
         <tr>
-          <td class="col-result">Failed</td>
-          <td class="col-name">basic/tests/test_parametrized.py::TestSum::test_equal[1-1-2-Does Not Match]</td>
-          <td class="col-duration">0.01</td>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">tests/Fixture/session/test_google_ssn.py::GoogleTest::test_check_google_2_ssn</td>
+          <td class="col-duration">0.00</td>
           <td class="col-links"></td></tr>
         <tr>
           <td class="extra" colspan="4">
-            <div class="log">self = &lt;test_parametrized.TestSum object at 0x000001774F20B100&gt;, show = &#x27;number=1&#x27;, num1 = 1, num2 = 2, error_message = &#x27;Does Not Match&#x27;<br/><br/>    @pytest.mark.all<br/>    @pytest.mark.parametrize(argnames=&#x27;num1, num2, error_message&#x27;, argvalues=[(1, 1, &#x27;Matches&#x27;), (1, 2, &#x27;Does Not Match&#x27;)])<br/>    def test_equal(self, show, num1, num2, error_message):<br/>        # Pass the parameters as the function arguments<br/>&gt;       assert self.check_equal(num1, num2), error_message<br/><span class="error">E       AssertionError: Does Not Match</span><br/><span class="error">E       assert False</span><br/><span class="error">E        +  where False = &lt;bound method TestSum.check_equal of &lt;test_parametrized.TestSum object at 0x000001774F20B100&gt;&gt;(1, 2)</span><br/><span class="error">E        +    where &lt;bound method TestSum.check_equal of &lt;test_parametrized.TestSum object at 0x000001774F20B100&gt;&gt; = &lt;test_parametrized.TestSum object at 0x000001774F20B100&gt;.check_equal</span><br/><br/>basic\tests\test_parametrized.py:14: AssertionError<br/> -----------------------------Captured stdout setup------------------------------ <br/>start fixture for num 1
-<br/> ------------------------------Captured stdout call------------------------------ <br/>Checking equality....
-<br/> ----------------------------Captured stdout teardown---------------------------- <br/>end fixture
-<br/></div></td></tr></tbody>
-      <tbody class="failed results-table-row">
+            <div class="log">[gw8] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe<br/>[gw8] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe<br/>(&#x27;D:\\Workspace\\Python\\Learning\\Pytest\\basic\\tests\\Fixture\\session\\test_google_ssn.py&#x27;, 11, &#x27;Skipped: unconditional skip&#x27;)[gw8] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
         <tr>
-          <td class="col-result">Failed</td>
-          <td class="col-name">basic/tests/test_parametrized.py::TestSum::test_equal[2-1-2-Does Not Match]</td>
-          <td class="col-duration">0.02</td>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/Fixture/function/test_amazon_fun.py::AmznTest::test_check_amazon_fun</td>
+          <td class="col-duration">20.00</td>
           <td class="col-links"></td></tr>
         <tr>
           <td class="extra" colspan="4">
-            <div class="log">self = &lt;test_parametrized.TestSum object at 0x000001774F24A6A0&gt;, show = &#x27;number=1&#x27;, num1 = 1, num2 = 2, error_message = &#x27;Does Not Match&#x27;<br/><br/>    @pytest.mark.all<br/>    @pytest.mark.parametrize(argnames=&#x27;num1, num2, error_message&#x27;, argvalues=[(1, 1, &#x27;Matches&#x27;), (1, 2, &#x27;Does Not Match&#x27;)])<br/>    def test_equal(self, show, num1, num2, error_message):<br/>        # Pass the parameters as the function arguments<br/>&gt;       assert self.check_equal(num1, num2), error_message<br/><span class="error">E       AssertionError: Does Not Match</span><br/><span class="error">E       assert False</span><br/><span class="error">E        +  where False = &lt;bound method TestSum.check_equal of &lt;test_parametrized.TestSum object at 0x000001774F24A6A0&gt;&gt;(1, 2)</span><br/><span class="error">E        +    where &lt;bound method TestSum.check_equal of &lt;test_parametrized.TestSum object at 0x000001774F24A6A0&gt;&gt; = &lt;test_parametrized.TestSum object at 0x000001774F24A6A0&gt;.check_equal</span><br/><br/>basic\tests\test_parametrized.py:14: AssertionError<br/> -----------------------------Captured stdout setup------------------------------ <br/>start fixture for num 2
-<br/> ------------------------------Captured stdout call------------------------------ <br/>Checking equality....
-<br/> ----------------------------Captured stdout teardown---------------------------- <br/>end fixture
+            <div class="log">[gw3] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe<br/>[gw3] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe[gw3] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe[gw3] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe<br/> ------------------------------Captured stdout call------------------------------ <br/>Amazon.com. Spend less. Smile more.
 <br/></div></td></tr></tbody>
       <tbody class="passed results-table-row">
         <tr>
           <td class="col-result">Passed</td>
-          <td class="col-name">basic/tests/test_parametrized.py::TestSum::test_equal[1-1-1-Matches]</td>
-          <td class="col-duration">8.90</td>
+          <td class="col-name">tests/Fixture/class/test_amazon_cls.py::AmznTest::test_check_amazon_cls</td>
+          <td class="col-duration">22.77</td>
           <td class="col-links"></td></tr>
         <tr>
           <td class="extra" colspan="4">
-            <div class="log"> -----------------------------Captured stdout setup------------------------------ <br/>start fixture for num 1
-<br/> ------------------------------Captured stdout call------------------------------ <br/>Checking equality....
-<br/> ----------------------------Captured stdout teardown---------------------------- <br/>end fixture
+            <div class="log">[gw0] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe<br/>[gw0] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe[gw0] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe[gw0] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe<br/> ------------------------------Captured stdout call------------------------------ <br/>Amazon.com. Spend less. Smile more.
 <br/></div></td></tr></tbody>
       <tbody class="passed results-table-row">
         <tr>
           <td class="col-result">Passed</td>
-          <td class="col-name">basic/tests/test_parametrized.py::TestSum::test_equal[2-1-1-Matches]</td>
-          <td class="col-duration">0.01</td>
+          <td class="col-name">tests/Fixture/session/test_amazon_ssn.py::AmznTest::test_check_amazon_ssn</td>
+          <td class="col-duration">16.93</td>
           <td class="col-links"></td></tr>
         <tr>
           <td class="extra" colspan="4">
-            <div class="log"> -----------------------------Captured stdout setup------------------------------ <br/>start fixture for num 2
-<br/> ------------------------------Captured stdout call------------------------------ <br/>Checking equality....
-<br/> ----------------------------Captured stdout teardown---------------------------- <br/>end fixture
+            <div class="log">[gw6] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe<br/>[gw6] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe[gw6] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe[gw6] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe<br/> ------------------------------Captured stdout call------------------------------ <br/>Amazon.com. Spend less. Smile more.
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/Fixture/function/test_google_fun.py::GoogleTest::test_check_google_2_fun</td>
+          <td class="col-duration">12.56</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">[gw5] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe<br/>[gw5] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe[gw5] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe[gw5] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe<br/> ------------------------------Captured stdout call------------------------------ <br/>
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/Fixture/session/test_google_ssn.py::GoogleTest::test_check_google_1_ssn</td>
+          <td class="col-duration">12.46</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">[gw7] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe<br/>[gw7] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe[gw7] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe[gw7] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe<br/> ------------------------------Captured stdout call------------------------------ <br/>Google
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/Fixture/function/test_google_fun.py::GoogleTest::test_check_google_1_fun</td>
+          <td class="col-duration">14.86</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">[gw4] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe<br/>[gw4] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe[gw4] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe[gw4] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe<br/> ------------------------------Captured stdout call------------------------------ <br/>Google
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/Fixture/class/test_google_cls.py::GoogleTest::test_check_google_1_cls</td>
+          <td class="col-duration">15.41</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">[gw1] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe<br/>[gw1] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe[gw1] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe[gw1] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe<br/> ------------------------------Captured stdout call------------------------------ <br/>Google
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/Fixture/class/test_google_cls.py::GoogleTest::test_check_google_2_cls</td>
+          <td class="col-duration">11.87</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">[gw2] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe<br/>[gw2] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe[gw2] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe[gw2] win32 -- Python 3.11.4 D:\Workspace\Python\Learning\Pytest\basic\venv\Scripts\python.exe<br/> ------------------------------Captured stdout call------------------------------ <br/>
 <br/></div></td></tr></tbody></table></body></html>
