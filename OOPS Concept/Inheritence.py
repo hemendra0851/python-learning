@@ -18,7 +18,9 @@ class Dog(Animal):
     def bark(self) :
         print("WOOF! ")
         
-obj = Animal()
+obj = Dog()
+# obj = Animal()
 obj.name = 'Hello'
+obj.eat()
 obj.eat()
 

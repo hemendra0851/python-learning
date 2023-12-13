@@ -7,7 +7,7 @@ from os.path import dirname, abspath, realpath
 # if os.path.exists(fileName) == False:
 #     fileName = filePath + fileDetail.split('.')[0] + ".xlsx"
 # sheetName = fileDetail.split('.')[1]
-fileName= 'C:/Users/612946/OneDrive - Cognizant/612946_MyDriveData/COVID Backup/GTIN14 & 2D Barcode/CV19 MVP2/ESACollectionData.xlsx'
+fileName= 'ESACollectionData.xlsx'
 dataframe = pd.read_excel(fileName, 'Drug')
 rowDict = dataframe.set_index('_id').T.to_dict('dict')[21376311]
 print(rowDict)

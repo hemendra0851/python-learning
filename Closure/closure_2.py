@@ -22,4 +22,4 @@ print(times5(times3(2)))
 '''All function objects have a __closure__ attribute that returns a tuple of cell objects if it is a closure function.
 Referring to the example above, we know times3 and times5 are closure functions.'''
 
-times3.__closure__[0].cell_contents
+print(times3.__closure__[0].cell_contents)
